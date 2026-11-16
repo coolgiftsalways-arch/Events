@@ -1,0 +1,523 @@
+/* ========================================
+   CREATE EVENT PAGE
+======================================== */
+
+.ce-page {
+     min-height: 100vh;
+     padding: 110px 5% 70px;
+     background: #f8f8f6;
+     color: #22221f;
+     font-family: inherit;
+}
+
+.ce-container {
+     max-width: 1050px;
+     margin: 0 auto;
+}
+
+/* BACK BUTTON */
+
+.ce-back-btn {
+     display: inline-flex;
+     align-items: center;
+     gap: 9px;
+     padding: 10px 0;
+     border: none;
+     background: transparent;
+     color: #666;
+     font-size: 14px;
+     font-weight: 600;
+     cursor: pointer;
+     transition: color 0.2s ease;
+}
+
+.ce-back-btn:hover {
+     color: #b68b48;
+}
+
+/* PAGE HEADING */
+
+.ce-heading {
+     margin: 25px 0 35px;
+}
+
+.ce-eyebrow {
+     color: #b68b48;
+     font-size: 11px;
+     font-weight: 800;
+     letter-spacing: 2.5px;
+}
+
+.ce-heading h1 {
+     margin: 10px 0;
+     color: #22221f;
+     font-size: clamp(30px, 4vw, 43px);
+     font-weight: 750;
+     letter-spacing: -1.5px;
+}
+
+.ce-heading p {
+     margin: 0;
+     color: #777;
+     font-size: 14px;
+     line-height: 1.7;
+}
+
+/* FORM */
+
+.ce-form {
+     display: flex;
+     flex-direction: column;
+     gap: 22px;
+}
+
+/* CARDS */
+
+.ce-card {
+     padding: 27px;
+     background: #fff;
+     border: 1px solid #eae9e4;
+     border-radius: 15px;
+     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.025);
+}
+
+.ce-section-heading {
+     display: flex;
+     align-items: center;
+     gap: 14px;
+     margin-bottom: 25px;
+}
+
+.ce-section-icon {
+     width: 44px;
+     height: 44px;
+     flex-shrink: 0;
+     display: grid;
+     place-items: center;
+     border-radius: 12px;
+     background: #f4ecdf;
+     color: #a57c3d;
+}
+
+.ce-section-heading h2 {
+     margin: 0 0 5px;
+     color: #292925;
+     font-size: 18px;
+     font-weight: 700;
+}
+
+.ce-section-heading p {
+     margin: 0;
+     color: #888;
+     font-size: 12px;
+     line-height: 1.5;
+}
+
+/* GRID */
+
+.ce-grid {
+     display: grid;
+     grid-template-columns: repeat(2, minmax(0, 1fr));
+     gap: 21px 18px;
+}
+
+.ce-field {
+     min-width: 0;
+     display: flex;
+     flex-direction: column;
+     gap: 9px;
+}
+
+.ce-full {
+     grid-column: 1 / -1;
+}
+
+.ce-field label {
+     color: #444;
+     font-size: 13px;
+     font-weight: 700;
+}
+
+.ce-field input,
+.ce-field select,
+.ce-field textarea {
+     width: 100%;
+     min-height: 47px;
+     padding: 12px 14px;
+     border: 1px solid #e4e2dc;
+     border-radius: 9px;
+     outline: none;
+     background: #fff;
+     color: #333;
+     font-family: inherit;
+     font-size: 13px;
+     transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+}
+
+.ce-field input:focus,
+.ce-field select:focus,
+.ce-field textarea:focus {
+     border-color: #b68b48;
+     box-shadow: 0 0 0 3px rgba(182, 139, 72, 0.1);
+}
+
+.ce-field input::placeholder,
+.ce-field textarea::placeholder {
+     color: #aaa;
+}
+
+.ce-field textarea {
+     min-height: 110px;
+     resize: vertical;
+     line-height: 1.7;
+}
+
+.ce-field select {
+     cursor: pointer;
+}
+
+.ce-character-count {
+     align-self: flex-end;
+     color: #999;
+     font-size: 11px;
+}
+
+/* INPUT ICONS */
+
+.ce-input-icon {
+     position: relative;
+     display: flex;
+     align-items: center;
+}
+
+.ce-input-icon>svg {
+     position: absolute;
+     left: 13px;
+     color: #a57c3d;
+     pointer-events: none;
+}
+
+.ce-input-icon input {
+     padding-left: 40px;
+}
+
+/* IMAGE UPLOAD */
+
+.ce-upload-area {
+     min-height: 220px;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 10px;
+     padding: 25px;
+     border: 1.5px dashed #d8d2c6;
+     border-radius: 12px;
+     background: #fcfbf8;
+     text-align: center;
+     cursor: pointer;
+     transition: all 0.25s ease;
+}
+
+.ce-upload-area:hover {
+     border-color: #b68b48;
+     background: #faf7f0;
+}
+
+.ce-upload-icon {
+     width: 56px;
+     height: 56px;
+     display: grid;
+     place-items: center;
+     margin-bottom: 5px;
+     border-radius: 15px;
+     background: #f2eadc;
+     color: #a57c3d;
+}
+
+.ce-upload-area strong {
+     color: #333;
+     font-size: 14px;
+}
+
+.ce-upload-area span {
+     color: #888;
+     font-size: 12px;
+}
+
+.ce-upload-area small {
+     margin-top: 5px;
+     color: #aaa;
+     font-size: 11px;
+}
+
+/* IMAGE PREVIEW */
+
+.ce-image-preview {
+     position: relative;
+     overflow: hidden;
+     border: 1px solid #eee;
+     border-radius: 12px;
+     background: #f5f5f5;
+}
+
+.ce-image-preview img {
+     display: block;
+     width: 100%;
+     max-height: 380px;
+     object-fit: contain;
+}
+
+.ce-remove-image {
+     position: absolute;
+     top: 12px;
+     right: 12px;
+     width: 35px;
+     height: 35px;
+     display: grid;
+     place-items: center;
+     border: none;
+     border-radius: 50%;
+     background: rgba(25, 25, 25, 0.8);
+     color: #fff;
+     cursor: pointer;
+}
+
+.ce-remove-image:hover {
+     background: #c0392b;
+}
+
+.ce-image-name {
+     padding: 12px 15px;
+     background: #fff;
+     color: #777;
+     font-size: 12px;
+     overflow-wrap: anywhere;
+}
+
+/* MESSAGES */
+
+.ce-message {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     padding: 14px 16px;
+     border-radius: 9px;
+     font-size: 13px;
+     line-height: 1.5;
+}
+
+.ce-error {
+     border: 1px solid #ffd4d0;
+     background: #fff1f0;
+     color: #b42318;
+}
+
+.ce-success {
+     border: 1px solid #ccebd5;
+     background: #effaf2;
+     color: #187a3b;
+}
+
+/* SUBMIT AREA */
+
+.ce-submit-area {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 20px;
+     padding: 22px 25px;
+     border: 1px solid #eae9e4;
+     border-radius: 13px;
+     background: #fff;
+}
+
+.ce-submit-area>p {
+     margin: 0;
+     color: #888;
+     font-size: 12px;
+     line-height: 1.6;
+}
+
+.ce-submit-area>p strong {
+     color: #b68b48;
+}
+
+.ce-submit-buttons {
+     display: flex;
+     align-items: center;
+     gap: 11px;
+     flex-shrink: 0;
+}
+
+.ce-cancel-btn,
+.ce-submit-btn {
+     min-height: 46px;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 9px;
+     padding: 0 21px;
+     border-radius: 8px;
+     font-family: inherit;
+     font-size: 13px;
+     font-weight: 700;
+     cursor: pointer;
+     transition: all 0.2s ease;
+}
+
+.ce-cancel-btn {
+     border: 1px solid #e5e3dd;
+     background: #fff;
+     color: #555;
+}
+
+.ce-cancel-btn:hover {
+     background: #f2f0eb;
+}
+
+.ce-submit-btn {
+     border: 1px solid #b68b48;
+     background: #b68b48;
+     color: #fff;
+}
+
+.ce-submit-btn:hover {
+     border-color: #987039;
+     background: #987039;
+}
+
+.ce-submit-btn:disabled {
+     opacity: 0.6;
+     cursor: not-allowed;
+}
+
+/* TABLET */
+
+@media (max-width: 768px) {
+     .ce-page {
+          padding: 95px 20px 50px;
+     }
+
+     .ce-card {
+          padding: 22px;
+     }
+
+     .ce-submit-area {
+          align-items: flex-start;
+          flex-direction: column;
+     }
+
+     .ce-submit-buttons {
+          width: 100%;
+     }
+
+     .ce-cancel-btn,
+     .ce-submit-btn {
+          flex: 1;
+     }
+}
+
+/* MOBILE */
+
+@media (max-width: 520px) {
+     .ce-page {
+          padding: 88px 14px 40px;
+     }
+
+     .ce-heading {
+          margin: 20px 0 25px;
+     }
+
+     .ce-heading h1 {
+          font-size: 30px;
+     }
+
+     .ce-heading p {
+          font-size: 12px;
+     }
+
+     .ce-form {
+          gap: 15px;
+     }
+
+     .ce-card {
+          padding: 17px;
+          border-radius: 12px;
+     }
+
+     .ce-section-heading {
+          gap: 11px;
+          margin-bottom: 20px;
+     }
+
+     .ce-section-icon {
+          width: 39px;
+          height: 39px;
+     }
+
+     .ce-section-heading h2 {
+          font-size: 16px;
+     }
+
+     .ce-section-heading p {
+          font-size: 11px;
+     }
+
+     .ce-grid {
+          grid-template-columns: 1fr;
+          gap: 17px;
+     }
+
+     .ce-full {
+          grid-column: auto;
+     }
+
+     .ce-field input,
+     .ce-field select,
+     .ce-field textarea {
+          font-size: 13px;
+     }
+
+     .ce-upload-area {
+          min-height: 190px;
+          padding: 18px;
+     }
+
+     .ce-image-preview img {
+          max-height: 260px;
+     }
+
+     .ce-submit-area {
+          padding: 18px;
+     }
+
+     .ce-submit-buttons {
+          display: grid;
+          grid-template-columns: 1fr 1.5fr;
+     }
+
+     .ce-cancel-btn,
+     .ce-submit-btn {
+          min-height: 44px;
+          padding: 0 10px;
+          font-size: 12px;
+     }
+}
+
+@media (max-width: 350px) {
+     .ce-page {
+          padding-left: 10px;
+          padding-right: 10px;
+     }
+
+     .ce-card {
+          padding: 14px;
+     }
+
+     .ce-section-heading p {
+          max-width: 210px;
+     }
+}

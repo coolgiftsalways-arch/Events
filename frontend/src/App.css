@@ -1,0 +1,51 @@
+/* Main app layout */
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: clip;
+
+  /* Space reserved for fixed navbar */
+  padding-top: 112px;
+}
+
+/* Main content */
+
+main {
+  width: 100%;
+  min-height: 100vh;
+  overflow: visible;
+}
+
+/* Sections */
+
+section {
+  position: relative;
+  width: 100%;
+  scroll-margin-top: 125px;
+}
+
+/* Mobile */
+
+@media (max-width: 850px) {
+  .app {
+    padding-top: 78px;
+  }
+
+  section {
+    scroll-margin-top: 90px;
+  }
+}
+
+@media (max-width: 768px) {
+  main {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .app {
+    width: 100%;
+    overflow-x: clip;
+  }
+}

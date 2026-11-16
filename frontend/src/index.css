@@ -1,0 +1,171 @@
+/* =====================================
+   STALLORA GLOBAL STYLES
+===================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap");
+/* GLOBAL RESET */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
+
+html[data-language="hi"],
+html[data-language="mr"] {
+  font-family: "Noto Sans Devanagari", sans-serif;
+}
+
+html[data-language="hi"] *,
+html[data-language="mr"] * {
+  font-family: "Noto Sans Devanagari", sans-serif;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* HTML */
+
+html {
+  width: 100%;
+  min-height: 100%;
+
+  scroll-behavior: auto;
+
+  overflow-x: hidden;
+}
+
+
+/* BODY */
+
+body {
+  width: 100%;
+  min-height: 100vh;
+
+  font-family: 'DM Sans', sans-serif;
+
+  background: #fff9fc;
+
+  color: #160d1a;
+
+  overflow-x: hidden;
+
+  -webkit-font-smoothing: antialiased;
+
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ROOT */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+
+/* HEADINGS */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+}
+
+
+/* LINKS */
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+
+/* BUTTONS */
+
+button {
+  font-family: 'DM Sans', sans-serif;
+  border: none;
+  outline: none;
+}
+
+
+/* INPUTS */
+
+input,
+textarea,
+select {
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+
+
+/* IMAGES */
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+
+/* LISTS */
+
+ul,
+ol {
+  list-style: none;
+}
+
+
+/* SELECTION */
+
+::selection {
+  background: #e4c5f5;
+  color: #390c45;
+}
+
+
+/* SCROLLBAR */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff9fc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c49bd5;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #55136d;
+}
+
+
+/* FOCUS ACCESSIBILITY */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid #792d91;
+  outline-offset: 4px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+}

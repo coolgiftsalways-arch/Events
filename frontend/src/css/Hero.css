@@ -1,0 +1,1083 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
+
+:root {
+     --stallora-bg: #21102d;
+     --stallora-purple: #7439a6;
+     --stallora-lime: #dfff62;
+     --stallora-coral: #ff735f;
+     --stallora-white: #fffaf2;
+     --stallora-nav-height: 102px;
+}
+
+/* =================================
+   HERO - FULL VIEWPORT
+================================= */
+
+.stallora-hero {
+     position: relative;
+     width: 100%;
+
+     height: calc(100svh - var(--stallora-nav-height));
+     min-height: 0;
+
+     background: var(--stallora-bg);
+     color: var(--stallora-white);
+
+     overflow: hidden;
+     font-family: "DM Sans", sans-serif;
+     isolation: isolate;
+
+     display: flex;
+     flex-direction: column;
+}
+
+/* BACKGROUND */
+
+.stallora-bg-circle {
+     position: absolute;
+     width: 550px;
+     height: 550px;
+     right: 0;
+     top: 5%;
+     border-radius: 50%;
+     background: radial-gradient(circle,
+               rgba(116, 57, 166, 0.3),
+               transparent 70%);
+     pointer-events: none;
+}
+
+.stallora-grid-pattern {
+     position: absolute;
+     inset: 0;
+     opacity: 0.06;
+     pointer-events: none;
+     background-image: radial-gradient(rgba(255, 255, 255, 0.8) 0.7px,
+               transparent 0.7px);
+     background-size: 22px 22px;
+}
+
+/* INNER */
+
+.stallora-hero-inner {
+     width: 100%;
+     max-width: 1600px;
+     height: 100%;
+     min-height: 0;
+
+     margin: auto;
+     padding: 17px 7% 10px;
+
+     position: relative;
+     z-index: 2;
+
+     display: flex;
+     flex-direction: column;
+}
+
+/* TOPLINE */
+
+.stallora-topline {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+
+     flex-shrink: 0;
+
+     padding-bottom: 13px;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.stallora-kicker {
+     display: flex;
+     align-items: center;
+     gap: 11px;
+
+     font-size: 9px;
+     font-weight: 800;
+     letter-spacing: 1.5px;
+}
+
+.stallora-live-dot {
+     width: 8px;
+     height: 8px;
+     flex-shrink: 0;
+     border-radius: 50%;
+     background: var(--stallora-lime);
+     box-shadow: 0 0 12px var(--stallora-lime);
+}
+
+.stallora-edition {
+     display: flex;
+     gap: 9px;
+     align-items: center;
+
+     color: rgba(255, 255, 255, 0.6);
+     font-size: 9px;
+     letter-spacing: 2px;
+     font-weight: 700;
+}
+
+.stallora-edition-divider {
+     color: var(--stallora-coral);
+}
+
+/* MAIN */
+
+.stallora-main {
+     flex: 1;
+     min-height: 0;
+
+     display: grid;
+     grid-template-columns: 1.05fr 0.95fr;
+     align-items: center;
+     gap: 20px;
+
+     padding: 12px 0;
+}
+
+/* LEFT CONTENT */
+
+.stallora-copy {
+     position: relative;
+     z-index: 3;
+     min-width: 0;
+     padding: 5px 0;
+}
+
+.stallora-small-tag {
+     display: inline-flex;
+     align-items: center;
+     gap: 9px;
+
+     color: var(--stallora-lime);
+     font-size: 9px;
+     font-weight: 800;
+     letter-spacing: 1.5px;
+
+     margin-bottom: 17px;
+}
+
+.stallora-small-tag svg {
+     color: var(--stallora-coral);
+     flex-shrink: 0;
+}
+
+.stallora-heading {
+     font-family: "Space Grotesk", sans-serif;
+
+     font-size: clamp(60px, 7.2vw, 112px);
+     line-height: 0.87;
+     letter-spacing: -6px;
+
+     font-weight: 700;
+     margin: 0;
+     text-transform: uppercase;
+}
+
+.stallora-title-line {
+     display: block;
+     overflow: hidden;
+     white-space: nowrap;
+}
+
+.stallora-title-highlight {
+     color: var(--stallora-lime);
+}
+
+.stallora-title-italic {
+     color: var(--stallora-coral);
+     font-style: italic;
+     text-transform: lowercase;
+     font-family: Georgia, serif;
+     font-weight: 500;
+}
+
+.stallora-title-period {
+     color: var(--stallora-lime);
+}
+
+/* DESCRIPTION */
+
+.stallora-description-row {
+     display: flex;
+     gap: 13px;
+     align-items: stretch;
+
+     margin: 19px 0 17px;
+     max-width: 390px;
+}
+
+.stallora-description-line {
+     width: 3px;
+     min-width: 3px;
+     background: var(--stallora-coral);
+}
+
+.stallora-intro {
+     margin: 0;
+     color: rgba(255, 255, 255, 0.75);
+     font-size: 12px;
+     line-height: 1.7;
+     max-width: 340px;
+}
+
+/* BUTTONS */
+
+.stallora-buttons {
+     display: flex;
+     align-items: center;
+     gap: 20px;
+     flex-wrap: wrap;
+}
+
+.stallora-cta {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 14px;
+
+     text-decoration: none;
+     font-size: 10px;
+     font-weight: 800;
+     letter-spacing: 0.7px;
+     text-transform: uppercase;
+
+     transition: 0.3s ease;
+}
+
+.stallora-primary {
+     background: var(--stallora-lime);
+     color: var(--stallora-bg);
+     padding: 7px 8px 7px 17px;
+}
+
+.stallora-button-icon {
+     width: 34px;
+     height: 34px;
+
+     display: grid;
+     place-items: center;
+
+     background: var(--stallora-bg);
+     color: var(--stallora-lime);
+
+     transition: 0.3s ease;
+}
+
+.stallora-primary:hover {
+     background: var(--stallora-coral);
+     transform: translateY(-3px);
+}
+
+.stallora-primary:hover .stallora-button-icon {
+     background: white;
+     color: var(--stallora-bg);
+}
+
+.stallora-secondary {
+     color: white;
+     padding-bottom: 6px;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.stallora-secondary:hover {
+     color: var(--stallora-lime);
+     border-color: var(--stallora-lime);
+}
+
+/* COPY BOTTOM */
+
+.stallora-copy-bottom {
+     display: flex;
+     flex-wrap: wrap;
+     gap: 17px;
+
+     margin-top: 27px;
+
+     color: rgba(255, 255, 255, 0.45);
+     font-size: 8px;
+     font-weight: 800;
+     letter-spacing: 0.8px;
+}
+
+/* =================================
+   IMAGE COLLAGE
+================================= */
+
+.stallora-visual {
+     position: relative;
+
+     height: min(420px, 72%);
+     min-height: 260px;
+
+     max-width: 570px;
+     width: 100%;
+     margin: auto;
+}
+
+.stallora-visual-glow {
+     position: absolute;
+     width: 300px;
+     height: 300px;
+
+     background: var(--stallora-purple);
+     filter: blur(100px);
+     opacity: 0.5;
+
+     top: 50px;
+     left: 100px;
+}
+
+.stallora-photo {
+     position: absolute;
+     overflow: hidden;
+
+     background: #473151;
+     border: 5px solid var(--stallora-bg);
+
+     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.stallora-photo img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     transition: transform 0.8s ease;
+}
+
+.stallora-photo:hover img {
+     transform: scale(1.08);
+}
+
+.stallora-photo-one {
+     width: 70%;
+     height: 76%;
+     top: 10%;
+     left: 8%;
+     z-index: 2;
+
+     transform: rotate(-5deg);
+     border-radius: 5px;
+}
+
+.stallora-photo-two {
+     width: 43%;
+     height: 43%;
+     right: 0;
+     top: 0;
+     z-index: 3;
+
+     transform: rotate(8deg);
+     border-radius: 5px;
+}
+
+.stallora-photo-three {
+     width: 45%;
+     height: 41%;
+     right: 1%;
+     bottom: 0;
+     z-index: 3;
+
+     transform: rotate(-7deg);
+     border-radius: 5px;
+}
+
+.stallora-photo-label {
+     position: absolute;
+     bottom: 12px;
+     left: 13px;
+     right: 13px;
+
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+
+     color: white;
+     font-size: 8px;
+     font-weight: 800;
+     letter-spacing: 1px;
+
+     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.stallora-mini-caption {
+     position: absolute;
+     bottom: 10px;
+     left: 9px;
+
+     color: white;
+     font-size: 7px;
+     font-weight: 800;
+     letter-spacing: 0.7px;
+
+     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* ROTATING LABEL */
+
+.stallora-floating-label {
+     position: absolute;
+     width: 105px;
+     height: 105px;
+
+     top: 36%;
+     right: 11%;
+     z-index: 5;
+
+     display: grid;
+     place-items: center;
+}
+
+.stallora-orbit {
+     position: absolute;
+     inset: 0;
+}
+
+.stallora-orbit svg {
+     width: 100%;
+     height: 100%;
+     overflow: visible;
+}
+
+.stallora-orbit text {
+     fill: var(--stallora-lime);
+     font-size: 9.5px;
+     font-weight: 800;
+     letter-spacing: 2px;
+}
+
+.stallora-sticker-center {
+     width: 47px;
+     height: 47px;
+
+     display: grid;
+     place-items: center;
+
+     background: var(--stallora-coral);
+     color: var(--stallora-bg);
+     border-radius: 50%;
+}
+
+/* FLOATING PILL */
+
+.stallora-floating-pill {
+     position: absolute;
+     bottom: 2%;
+     left: -2%;
+     z-index: 5;
+
+     display: flex;
+     align-items: center;
+     gap: 9px;
+
+     padding: 10px 13px;
+
+     background: var(--stallora-lime);
+     color: var(--stallora-bg);
+
+     font-size: 7px;
+     font-weight: 900;
+     letter-spacing: 0.6px;
+
+     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+     transform: rotate(-4deg);
+}
+
+.stallora-pill-star {
+     font-size: 16px;
+     color: var(--stallora-purple);
+}
+
+.stallora-visual-number {
+     position: absolute;
+     top: 0;
+     left: 0;
+
+     font-family: Georgia, serif;
+     font-size: 75px;
+     font-style: italic;
+
+     color: rgba(255, 255, 255, 0.08);
+     z-index: 1;
+}
+
+/* FOOTER */
+
+.stallora-footer-line {
+     flex-shrink: 0;
+
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+
+     padding: 11px 0;
+
+     border-top: 1px solid rgba(255, 255, 255, 0.16);
+
+     font-size: 8px;
+     font-weight: 800;
+     letter-spacing: 1px;
+     color: rgba(255, 255, 255, 0.55);
+}
+
+.stallora-footer-left {
+     display: flex;
+     align-items: center;
+     gap: 9px;
+}
+
+.stallora-footer-star {
+     color: var(--stallora-coral);
+     font-size: 17px;
+}
+
+.stallora-scroll {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+
+     color: var(--stallora-lime);
+     text-decoration: none;
+}
+
+.stallora-scroll svg {
+     animation: stalloraScroll 1.5s infinite alternate;
+}
+
+@keyframes stalloraScroll {
+     to {
+          transform: translateY(4px);
+     }
+}
+
+/* TICKER */
+
+.stallora-ticker {
+     position: relative;
+     z-index: 4;
+
+     flex-shrink: 0;
+
+     background: var(--stallora-lime);
+     color: var(--stallora-bg);
+
+     padding: 9px 0;
+     overflow: hidden;
+}
+
+.stallora-ticker-track {
+     display: flex;
+     width: max-content;
+
+     animation: stalloraTicker 30s linear infinite;
+}
+
+.stallora-ticker-group {
+     display: flex;
+     align-items: center;
+     gap: 25px;
+     padding-right: 25px;
+
+     white-space: nowrap;
+
+     font-family: "Space Grotesk", sans-serif;
+     font-size: 13px;
+     font-weight: 800;
+     letter-spacing: 1.5px;
+}
+
+.ticker-star {
+     color: var(--stallora-purple);
+     font-size: 17px;
+}
+
+@keyframes stalloraTicker {
+     from {
+          transform: translateX(0);
+     }
+
+     to {
+          transform: translateX(-50%);
+     }
+}
+
+/* =================================
+   SHORT LAPTOP SCREENS
+================================= */
+
+@media (max-height: 800px) and (min-width: 701px) {
+     .stallora-hero-inner {
+          padding-top: 10px;
+          padding-bottom: 5px;
+     }
+
+     .stallora-main {
+          padding: 5px 0;
+     }
+
+     .stallora-heading {
+          font-size: clamp(55px, 6.5vw, 90px);
+     }
+
+     .stallora-small-tag {
+          margin-bottom: 12px;
+     }
+
+     .stallora-description-row {
+          margin: 13px 0;
+     }
+
+     .stallora-copy-bottom {
+          margin-top: 18px;
+     }
+
+     .stallora-visual {
+          height: min(350px, 65%);
+     }
+
+     .stallora-ticker {
+          padding: 7px 0;
+     }
+}
+
+/* =================================
+   TABLET
+================================= */
+
+@media (max-width: 1050px) and (min-width: 701px) {
+     .stallora-hero-inner {
+          padding-left: 4%;
+          padding-right: 4%;
+     }
+
+     .stallora-heading {
+          font-size: clamp(55px, 7vw, 82px);
+          letter-spacing: -4px;
+     }
+
+     .stallora-main {
+          grid-template-columns: 1fr 0.9fr;
+     }
+
+     .stallora-visual {
+          height: 340px;
+     }
+
+     .stallora-floating-label {
+          width: 85px;
+          height: 85px;
+     }
+}
+
+/* =================================
+   MOBILE
+================================= */
+
+@media (max-width: 700px) {
+     :root {
+          --stallora-nav-height: 76px;
+     }
+
+     .stallora-hero {
+          height: auto;
+          min-height: calc(100svh - var(--stallora-nav-height));
+          overflow: hidden;
+     }
+
+     .stallora-hero-inner {
+          height: auto;
+          min-height: calc(100svh - var(--stallora-nav-height) - 34px);
+
+          padding: 12px 5% 8px;
+     }
+
+     .stallora-topline {
+          padding-bottom: 10px;
+     }
+
+     .stallora-kicker {
+          font-size: 7px;
+          letter-spacing: 0.6px;
+          gap: 7px;
+     }
+
+     .stallora-live-dot {
+          width: 6px;
+          height: 6px;
+     }
+
+     .stallora-edition {
+          font-size: 7px;
+          gap: 5px;
+     }
+
+     .stallora-main {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: center;
+
+          gap: 5px;
+          padding: 14px 0 8px;
+     }
+
+     .stallora-copy {
+          padding: 0;
+     }
+
+     .stallora-small-tag {
+          font-size: 7px;
+          letter-spacing: 1px;
+          margin-bottom: 10px;
+     }
+
+     .stallora-heading {
+          font-size: clamp(48px, 12.5vw, 76px);
+          letter-spacing: -3px;
+          line-height: 0.88;
+     }
+
+     .stallora-description-row {
+          margin: 12px 0;
+          gap: 10px;
+     }
+
+     .stallora-description-line {
+          width: 2px;
+          min-width: 2px;
+     }
+
+     .stallora-intro {
+          font-size: 10px;
+          line-height: 1.55;
+     }
+
+     .stallora-buttons {
+          gap: 15px;
+     }
+
+     .stallora-cta {
+          font-size: 8px;
+          gap: 9px;
+     }
+
+     .stallora-primary {
+          padding: 5px 6px 5px 12px;
+     }
+
+     .stallora-button-icon {
+          width: 29px;
+          height: 29px;
+     }
+
+     .stallora-copy-bottom {
+          margin-top: 13px;
+          gap: 12px;
+          font-size: 6px;
+     }
+
+     /* IMAGE COLLAGE */
+     .stallora-visual {
+          height: clamp(175px, 30svh, 250px);
+          min-height: 175px;
+          width: 100%;
+          max-width: 420px;
+          margin: 3px auto 0;
+     }
+
+     .stallora-photo {
+          border-width: 3px;
+     }
+
+     .stallora-photo-one {
+          width: 66%;
+          height: 85%;
+          left: 7%;
+          top: 7%;
+     }
+
+     .stallora-photo-two {
+          width: 38%;
+          height: 43%;
+          right: 1%;
+          top: 0;
+     }
+
+     .stallora-photo-three {
+          width: 40%;
+          height: 39%;
+          right: 1%;
+          bottom: 0;
+     }
+
+     .stallora-photo-label {
+          font-size: 6px;
+          bottom: 7px;
+          left: 8px;
+          right: 8px;
+     }
+
+     .stallora-mini-caption {
+          font-size: 5px;
+          bottom: 6px;
+          left: 6px;
+     }
+
+     .stallora-floating-label {
+          width: 65px;
+          height: 65px;
+          top: 35%;
+          right: 14%;
+     }
+
+     .stallora-sticker-center {
+          width: 32px;
+          height: 32px;
+     }
+
+     .stallora-sticker-center svg {
+          width: 17px;
+     }
+
+     .stallora-orbit text {
+          font-size: 10px;
+     }
+
+     .stallora-floating-pill {
+          bottom: -1%;
+          left: 1%;
+          padding: 7px 9px;
+          font-size: 6px;
+          gap: 5px;
+     }
+
+     .stallora-pill-star {
+          font-size: 12px;
+     }
+
+     .stallora-visual-number {
+          font-size: 50px;
+     }
+
+     /* FOOTER */
+     .stallora-footer-line {
+          padding: 8px 0;
+          font-size: 6px;
+          letter-spacing: 0.5px;
+          gap: 8px;
+     }
+
+     .stallora-footer-star {
+          font-size: 13px;
+     }
+
+     .stallora-footer-right {
+          display: none;
+     }
+
+     .stallora-scroll {
+          gap: 5px;
+     }
+
+     .stallora-scroll svg {
+          width: 12px;
+     }
+
+     /* TICKER */
+     .stallora-ticker {
+          padding: 8px 0;
+     }
+
+     .stallora-ticker-group {
+          font-size: 11px;
+          gap: 17px;
+     }
+}
+
+/* =================================
+   SMALL PHONES
+================================= */
+
+@media (max-width: 380px) {
+     .stallora-heading {
+          font-size: 46px;
+          letter-spacing: -2.5px;
+     }
+
+     .stallora-visual {
+          height: 175px;
+     }
+
+     .stallora-copy-bottom {
+          gap: 8px;
+          font-size: 5.5px;
+     }
+
+     .stallora-intro {
+          font-size: 9px;
+     }
+
+     .stallora-cta {
+          font-size: 7px;
+     }
+}
+
+/* VERY SHORT MOBILE SCREENS */
+
+@media (max-width: 700px) and (max-height: 700px) {
+     .stallora-main {
+          padding: 8px 0 4px;
+     }
+
+     .stallora-small-tag {
+          margin-bottom: 7px;
+     }
+
+     .stallora-description-row {
+          margin: 8px 0;
+     }
+
+     .stallora-copy-bottom {
+          margin-top: 8px;
+     }
+
+     .stallora-visual {
+          height: 155px;
+          min-height: 155px;
+     }
+}
+
+/* HINDI AND MARATHI */
+
+.stallora-hero.language-hi,
+.stallora-hero.language-mr {
+     font-family: "Noto Sans Devanagari", sans-serif;
+}
+
+.stallora-hero.language-hi .stallora-heading,
+.stallora-hero.language-mr .stallora-heading {
+     font-family: "Noto Sans Devanagari", sans-serif;
+     letter-spacing: -1px;
+     line-height: 1.12;
+     font-size: clamp(42px, 5.5vw, 78px);
+}
+
+.stallora-hero.language-hi .stallora-intro,
+.stallora-hero.language-mr .stallora-intro {
+     line-height: 1.8;
+}
+
+@media (max-width: 700px) {
+
+     .stallora-hero.language-hi .stallora-heading,
+     .stallora-hero.language-mr .stallora-heading {
+          font-size: clamp(33px, 9vw, 54px);
+          line-height: 1.2;
+     }
+}
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+
+     .stallora-ticker-track,
+     .stallora-scroll svg {
+          animation: none;
+     }
+}
+
+
+/* ==========================================
+   NEW ORGANISER AND VENDOR CTA BUTTONS
+========================================== */
+
+.stallora-buttons {
+     display: flex;
+     align-items: center;
+     gap: 15px;
+     flex-wrap: wrap;
+}
+
+.stallora-cta {
+     min-height: 48px;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 10px;
+
+     text-decoration: none;
+     font-size: 10px;
+     font-weight: 800;
+     letter-spacing: 0.6px;
+     text-transform: uppercase;
+
+     transition: all 0.3s ease;
+}
+
+.stallora-primary {
+     padding: 6px 7px 6px 14px;
+
+     background: var(--stallora-lime);
+     color: var(--stallora-bg);
+
+     border: 1px solid var(--stallora-lime);
+}
+
+.stallora-button-icon {
+     width: 34px;
+     height: 34px;
+
+     display: grid;
+     place-items: center;
+
+     background: var(--stallora-bg);
+     color: var(--stallora-lime);
+
+     transition: all 0.3s ease;
+}
+
+.stallora-primary:hover {
+     background: var(--stallora-coral);
+     border-color: var(--stallora-coral);
+     transform: translateY(-3px);
+}
+
+.stallora-primary:hover .stallora-button-icon {
+     background: white;
+     color: var(--stallora-bg);
+}
+
+.stallora-secondary {
+     padding: 0 5px;
+     color: white;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.stallora-secondary:hover {
+     color: var(--stallora-lime);
+     border-color: var(--stallora-lime);
+     transform: translateY(-3px);
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+     .stallora-buttons {
+          gap: 12px;
+     }
+
+     .stallora-cta {
+          min-height: 42px;
+          font-size: 8px;
+          gap: 7px;
+     }
+
+     .stallora-primary {
+          padding: 5px 6px 5px 10px;
+     }
+
+     .stallora-button-icon {
+          width: 29px;
+          height: 29px;
+     }
+}

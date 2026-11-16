@@ -1,0 +1,794 @@
+```css
+/* ==========================================
+   ORGANISER PROFILE - STALLORA
+========================================== */
+
+.op-page {
+     min-height: 100vh;
+     background: #fffaf2;
+     color: #21102d;
+     padding: 35px 24px 70px;
+     font-family: inherit;
+     box-sizing: border-box;
+}
+
+.op-page *,
+.op-page *::before,
+.op-page *::after {
+     box-sizing: border-box;
+}
+
+.op-container {
+     max-width: 1120px;
+     margin: 0 auto;
+     width: 100%;
+}
+
+/* ==========================================
+   TOPBAR
+========================================== */
+
+.op-topbar {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 55px;
+     gap: 15px;
+}
+
+.op-back-home {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     color: #21102d;
+     font-size: 15px;
+     font-weight: 900;
+     letter-spacing: 2px;
+     text-decoration: none;
+     transition: color 0.25s ease;
+}
+
+.op-back-home:hover {
+     color: #7439a6;
+}
+
+.op-top-actions {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+}
+
+.op-dashboard-link,
+.op-edit-button {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 9px;
+     padding: 12px 19px;
+     border-radius: 30px;
+     font-size: 13px;
+     font-weight: 700;
+     text-decoration: none;
+     cursor: pointer;
+     transition: all 0.25s ease;
+}
+
+.op-dashboard-link {
+     border: 1px solid #e8dfd3;
+     color: #21102d;
+     background: white;
+}
+
+.op-edit-button {
+     border: none;
+     background: #21102d;
+     color: white;
+}
+
+.op-dashboard-link:hover {
+     background: #f2ebdf;
+     transform: translateY(-2px);
+}
+
+.op-edit-button:hover {
+     background: #7439a6;
+     transform: translateY(-2px);
+}
+
+/* ==========================================
+   SUCCESS MESSAGE
+========================================== */
+
+.op-message {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     padding: 14px 18px;
+     background: #e9f8e9;
+     color: #27743b;
+     border-radius: 12px;
+     margin-bottom: 25px;
+     font-size: 13px;
+     line-height: 1.5;
+}
+
+.op-message button {
+     margin-left: auto;
+     border: none;
+     background: transparent;
+     color: inherit;
+     cursor: pointer;
+     flex-shrink: 0;
+}
+
+/* ==========================================
+   PROFILE HEADER
+========================================== */
+
+.op-profile-header {
+     display: grid;
+     grid-template-columns: 240px minmax(0, 1fr);
+     gap: 55px;
+     align-items: center;
+     padding: 15px 30px 45px;
+     border-bottom: 1px solid #eadfd2;
+}
+
+.op-avatar-section {
+     display: flex;
+     justify-content: center;
+     align-items: center;
+}
+
+.op-avatar {
+     width: 190px;
+     height: 190px;
+     min-width: 190px;
+     border-radius: 50%;
+     background: linear-gradient(135deg, #7439a6, #ff735f);
+     border: 5px solid white;
+     outline: 2px solid #dfff62;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     color: white;
+     font-size: 54px;
+     font-weight: 800;
+     position: relative;
+     overflow: hidden;
+     cursor: pointer;
+     padding: 0;
+     transition: transform 0.3s ease;
+}
+
+.op-avatar:hover {
+     transform: scale(1.035);
+}
+
+.op-avatar img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     display: block;
+}
+
+.op-avatar-camera {
+     position: absolute;
+     bottom: 9px;
+     right: 9px;
+     width: 39px;
+     height: 39px;
+     border-radius: 50%;
+     background: #21102d;
+     color: white;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     border: 3px solid white;
+     pointer-events: none;
+}
+
+.op-profile-details {
+     min-width: 0;
+}
+
+.op-name-row {
+     display: flex;
+     align-items: center;
+     flex-wrap: wrap;
+     gap: 14px;
+}
+
+.op-name-row h1 {
+     margin: 0;
+     font-size: clamp(25px, 4vw, 38px);
+     font-weight: 850;
+     letter-spacing: -1.5px;
+     overflow-wrap: anywhere;
+}
+
+.op-membership-badge {
+     display: inline-flex;
+     align-items: center;
+     gap: 6px;
+     padding: 7px 12px;
+     border-radius: 30px;
+     font-size: 11px;
+     font-weight: 800;
+     white-space: nowrap;
+}
+
+.op-membership-badge.silver {
+     background: #eceef1;
+     color: #505968;
+}
+
+.op-membership-badge.gold {
+     background: #fff0bd;
+     color: #956000;
+}
+
+.op-username {
+     color: #8d8291;
+     font-size: 14px;
+     margin-top: 7px;
+     overflow-wrap: anywhere;
+}
+
+.op-stats {
+     display: flex;
+     align-items: center;
+     flex-wrap: wrap;
+     gap: 45px;
+     margin: 27px 0;
+}
+
+.op-stats div {
+     display: flex;
+     align-items: center;
+     gap: 7px;
+}
+
+.op-stats strong {
+     font-size: 17px;
+     font-weight: 850;
+}
+
+.op-stats span {
+     font-size: 13px;
+     color: #847a87;
+}
+
+.op-bio {
+     max-width: 550px;
+     font-size: 14px;
+     line-height: 1.7;
+     overflow-wrap: anywhere;
+}
+
+.op-bio strong {
+     display: block;
+     margin-bottom: 4px;
+}
+
+.op-bio p {
+     margin: 4px 0;
+     color: #645b69;
+     white-space: pre-wrap;
+}
+
+.op-meta-item {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     margin-top: 12px;
+     color: #645b69;
+     font-size: 13px;
+     overflow-wrap: anywhere;
+}
+
+.op-website {
+     width: fit-content;
+     color: #7439a6;
+     text-decoration: none;
+     font-weight: 700;
+}
+
+.op-website:hover {
+     text-decoration: underline;
+}
+
+.op-social-links {
+     display: flex;
+     gap: 17px;
+     margin-top: 15px;
+     flex-wrap: wrap;
+}
+
+.op-social-links a {
+     display: flex;
+     align-items: center;
+     gap: 7px;
+     color: #7439a6;
+     text-decoration: none;
+     font-size: 13px;
+     font-weight: 700;
+}
+
+.op-social-links a:hover {
+     color: #ff735f;
+}
+
+.op-categories {
+     display: flex;
+     gap: 8px;
+     flex-wrap: wrap;
+     margin-top: 15px;
+}
+
+.op-categories span {
+     background: #f1e9f7;
+     color: #7439a6;
+     padding: 7px 12px;
+     border-radius: 30px;
+     font-size: 11px;
+     font-weight: 700;
+}
+
+.op-mobile-edit {
+     display: none;
+}
+
+/* ==========================================
+   MEMBERSHIP BANNER
+========================================== */
+
+.op-plan-banner {
+     display: flex;
+     align-items: center;
+     gap: 17px;
+     padding: 20px 25px;
+     margin: 35px 0;
+     border-radius: 18px;
+}
+
+.op-plan-banner.silver {
+     background: #eef0f3;
+}
+
+.op-plan-banner.gold {
+     background: #fff2ca;
+}
+
+.op-plan-icon {
+     width: 48px;
+     height: 48px;
+     border-radius: 15px;
+     background: white;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     flex-shrink: 0;
+}
+
+.op-plan-banner.silver .op-plan-icon {
+     color: #687080;
+}
+
+.op-plan-banner.gold .op-plan-icon {
+     color: #b47a00;
+}
+
+.op-plan-banner>div:nth-child(2) {
+     min-width: 0;
+}
+
+.op-plan-banner>div:nth-child(2) span {
+     color: #887d88;
+     font-size: 9px;
+     letter-spacing: 1.5px;
+     font-weight: 800;
+}
+
+.op-plan-banner h3 {
+     font-size: 18px;
+     margin: 3px 0;
+}
+
+.op-plan-banner p {
+     color: #746c77;
+     font-size: 12px;
+     margin: 0;
+     line-height: 1.5;
+}
+
+.op-plan-status {
+     margin-left: auto;
+     font-size: 10px;
+     font-weight: 850;
+     letter-spacing: 1px;
+     padding: 9px 13px;
+     border-radius: 30px;
+     background: white;
+     color: #956000;
+     text-align: center;
+     white-space: nowrap;
+}
+
+/* ==========================================
+   PROFILE TABS
+========================================== */
+
+.op-tabs {
+     display: flex;
+     justify-content: center;
+     gap: 75px;
+     border-top: 1px solid #eadfd2;
+     border-bottom: 1px solid #eadfd2;
+}
+
+.op-tabs button,
+.op-tabs a {
+     display: flex;
+     align-items: center;
+     gap: 9px;
+     padding: 19px 8px;
+     border: none;
+     border-bottom: 2px solid transparent;
+     background: transparent;
+     color: #928796;
+     text-decoration: none;
+     font-size: 11px;
+     letter-spacing: 1.5px;
+     font-weight: 800;
+     cursor: pointer;
+     transition: all 0.2s ease;
+}
+
+.op-tabs button:hover,
+.op-tabs a:hover {
+     color: #7439a6;
+}
+
+.op-tabs button.active {
+     border-bottom-color: #7439a6;
+     color: #7439a6;
+}
+
+/* ==========================================
+   POSTS SECTION
+========================================== */
+
+.op-post-section {
+     padding-top: 38px;
+}
+
+.op-post-heading {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 25px;
+     gap: 15px;
+}
+
+.op-post-heading>div>span {
+     color: #a194a3;
+     font-size: 9px;
+     letter-spacing: 2px;
+     font-weight: 800;
+}
+
+.op-post-heading h2 {
+     font-size: 28px;
+     letter-spacing: -1px;
+     margin: 5px 0 0;
+}
+
+.op-create-post-button,
+.op-create-first-post {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 9px;
+     background: #21102d;
+     color: white;
+     border-radius: 30px;
+     padding: 13px 20px;
+     text-decoration: none;
+     font-size: 12px;
+     font-weight: 750;
+     transition: all 0.25s ease;
+     white-space: nowrap;
+}
+
+.op-create-post-button:hover,
+.op-create-first-post:hover {
+     background: #7439a6;
+     transform: translateY(-2px);
+}
+
+.op-post-grid {
+     display: grid;
+     grid-template-columns: repeat(3, minmax(0, 1fr));
+     gap: 8px;
+}
+
+.op-post-tile {
+     position: relative;
+     aspect-ratio: 1 / 1;
+     padding: 0;
+     border: none;
+     overflow: hidden;
+     background: #eee6dc;
+     cursor: pointer;
+}
+
+.op-post-tile img,
+.op-post-tile video {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     display: block;
+     transition: transform 0.5s ease;
+}
+
+.op-post-tile:hover img,
+.op-post-tile:hover video {
+     transform: scale(1.06);
+}
+
+.op-video-indicator {
+     position: absolute;
+     top: 14px;
+     right: 14px;
+     color: white;
+     filter: drop-shadow(0 2px 5px #000);
+}
+
+.op-post-overlay {
+     position: absolute;
+     inset: 0;
+     display: flex;
+     flex-direction: column;
+     justify-content: flex-end;
+     align-items: flex-start;
+     text-align: left;
+     padding: 20px;
+     color: white;
+     opacity: 0;
+     background: linear-gradient(transparent,
+               rgba(20, 10, 25, 0.8));
+     transition: opacity 0.3s ease;
+}
+
+.op-post-tile:hover .op-post-overlay {
+     opacity: 1;
+}
+
+.op-post-overlay strong {
+     font-size: 15px;
+}
+
+.op-post-overlay span {
+     font-size: 11px;
+     margin-top: 5px;
+}
+
+/* ==========================================
+   EMPTY POSTS
+========================================== */
+
+.op-empty-posts {
+     min-height: 310px;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     text-align: center;
+     padding: 40px 20px;
+     border: 1px dashed #d9cbdc;
+     border-radius: 20px;
+}
+
+.op-empty-icon {
+     width: 75px;
+     height: 75px;
+     border-radius: 50%;
+     background: #f0e6f7;
+     color: #7439a6;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+}
+
+.op-empty-posts h3 {
+     font-size: 22px;
+     margin: 20px 0 8px;
+}
+
+.op-empty-posts p {
+     max-width: 420px;
+     color: #8a808d;
+     font-size: 13px;
+     line-height: 1.7;
+     margin: 0 0 22px;
+}
+
+/* ==========================================
+   NOT FOUND
+========================================== */
+
+.op-not-found {
+     min-height: 65vh;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 25px;
+     background: #fffaf2;
+}
+
+.op-not-found-card {
+     text-align: center;
+     max-width: 420px;
+}
+
+.op-not-found-card>svg {
+     color: #7439a6;
+}
+
+.op-not-found-card h2 {
+     margin: 18px 0 8px;
+}
+
+.op-not-found-card p {
+     color: #807584;
+     line-height: 1.7;
+     font-size: 14px;
+}
+
+.op-not-found-card a {
+     display: inline-flex;
+     gap: 10px;
+     align-items: center;
+     background: #21102d;
+     color: white;
+     text-decoration: none;
+     border-radius: 30px;
+     padding: 13px 20px;
+     margin-top: 15px;
+     transition: background 0.2s ease;
+}
+
+.op-not-found-card a:hover {
+     background: #7439a6;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.op-footer {
+     display: flex;
+     justify-content: space-between;
+     flex-wrap: wrap;
+     gap: 15px;
+     padding-top: 35px;
+     margin-top: 50px;
+     border-top: 1px solid #eadfd2;
+     color: #a194a3;
+     font-size: 9px;
+     font-weight: 800;
+     letter-spacing: 2px;
+}
+
+/* ==========================================
+   EDIT PROFILE MODAL
+========================================== */
+
+.op-modal-overlay {
+     position: fixed;
+     inset: 0;
+     z-index: 9999;
+     background: rgba(24, 12, 32, 0.65);
+     backdrop-filter: blur(6px);
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     padding: 20px;
+     overflow-y: auto;
+}
+
+.op-edit-modal {
+     width: 100%;
+     max-width: 650px;
+     max-height: 90vh;
+     overflow-y: auto;
+     background: #fffaf2;
+     border-radius: 23px;
+     padding: 30px;
+     box-shadow: 0 25px 90px rgba(0, 0, 0, 0.2);
+     animation: opModalEnter 0.25s ease;
+}
+
+@keyframes opModalEnter {
+     from {
+          opacity: 0;
+          transform: translateY(15px) scale(0.98);
+     }
+
+     to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+     }
+}
+
+.op-modal-heading {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 25px;
+     gap: 15px;
+}
+
+.op-modal-heading span {
+     color: #a194a3;
+     font-size: 9px;
+     font-weight: 800;
+     letter-spacing: 2px;
+}
+
+.op-modal-heading h2 {
+     font-size: 26px;
+     margin: 5px 0 0;
+}
+
+.op-modal-heading>button {
+     border: none;
+     background: #f0e8df;
+     color: #21102d;
+     width: 38px;
+     height: 38px;
+     border-radius: 50%;
+     cursor: pointer;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     flex-shrink: 0;
+     transition: background 0.2s ease;
+}
+
+.op-modal-heading>button:hover {
+     background: #e5d7eb;
+}
+
+.op-edit-avatar {
+     display: flex;
+     align-items: center;
+     gap: 17px;
+     margin-bottom: 25px;
+}
+
+.op-edit-avatar-image {
+     width: 68px;
+     height: 68px;
+     border-radius: 50%;
+     background: linear-gradient(135deg, #7439a6, #ff735f);
+     color: white;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     font-size: 22px;
+     font-weight: 800;
+     overflow: hidden;
+     flex-shrink: 0;
+}
+
+.op-edit-avatar-image img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+}
+
+.op-edit-avatar button {
+     display: flex;
+     align-items
