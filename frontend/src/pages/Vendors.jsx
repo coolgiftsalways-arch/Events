@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import { Link } from "react-router-dom";
 
 import {
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { events } from "../data/events";
+
 import { useLanguage } from "../context/LanguageContext";
 
 import "../css/Vendors.css";
@@ -23,17 +25,59 @@ const FALLBACK_IMAGE =
 
 export default function Vendors() {
   const { t } = useLanguage();
+
   const v = t.vendorsPage;
 
   const [city, setCity] = useState("Mumbai");
+
   const [dateFilter, setDateFilter] = useState("All Dates");
+
   const [category, setCategory] = useState("All Categories");
+
   const [search, setSearch] = useState("");
+
   const [sort, setSort] = useState("soonest");
+
   const [page, setPage] = useState(1);
+
   const [favorites, setFavorites] = useState([]);
+  const [membership, setMembership] = useState(null);
+
+  // Read the active vendor membership from localStorage.
+  const refreshMembership = () => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("stalloraVendorMembership") || "null",
+      );
+      const active =
+        saved &&
+        saved.status === "active" &&
+        saved.expiresAt &&
+        new Date(saved.expiresAt).getTime() > Date.now();
+      setMembership(active ? saved : null);
+    } catch (error) {
+      console.error("Unable to read vendor membership:", error);
+      setMembership(null);
+    }
+  };
+
+  useEffect(() => {
+    refreshMembership();
+    const handleFocus = () => refreshMembership();
+    window.addEventListener("storage", refreshMembership);
+    window.addEventListener("stallora-vendor-updated", refreshMembership);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("storage", refreshMembership);
+      window.removeEventListener("stallora-vendor-updated", refreshMembership);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
+  const hasMembership = Boolean(membership);
 
   // FILTER EVENTS
+
   const filteredEvents = useMemo(() => {
     let result = events.filter((event) => {
       const categories = Array.isArray(event.category) ? event.category : [];
@@ -48,9 +92,13 @@ export default function Vendors() {
       const matchesSearch =
         !query ||
         [event.title, event.venue, event.organiser, ...categories]
+
           .filter(Boolean)
+
           .join(" ")
+
           .toLowerCase()
+
           .includes(query);
 
       const matchesDate =
@@ -78,17 +126,23 @@ export default function Vendors() {
     return result;
   }, [city, dateFilter, category, search, sort]);
 
-  // PAGINATION
+  // MEMBERSHIP ACCESS + PAGINATION
+  // Before membership, vendors can see only the first 3 filtered events.
+  const accessibleEvents = hasMembership
+    ? filteredEvents
+    : filteredEvents.slice(0, 3);
+  const lockedCount = hasMembership
+    ? 0
+    : Math.max(filteredEvents.length - 3, 0);
   const pageSize = 8;
-
-  const pageCount = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
-
-  const visibleEvents = filteredEvents.slice(
+  const pageCount = Math.max(1, Math.ceil(accessibleEvents.length / pageSize));
+  const visibleEvents = accessibleEvents.slice(
     (page - 1) * pageSize,
     page * pageSize,
   );
 
   // FAVORITES
+
   const toggleFavorite = (id) => {
     setFavorites((current) =>
       current.includes(id)
@@ -98,24 +152,32 @@ export default function Vendors() {
   };
 
   // CLEAR FILTERS
+
   const clearFilters = () => {
     setCity("Mumbai");
+
     setDateFilter("All Dates");
+
     setCategory("All Categories");
+
     setSearch("");
+
     setSort("soonest");
+
     setPage(1);
   };
 
   // IMAGE FALLBACK
+
   const handleImageError = (event) => {
     event.currentTarget.onerror = null;
+
     event.currentTarget.src = FALLBACK_IMAGE;
   };
 
   return (
     <main className="stall-page">
-      {/* HERO SECTION */}
+      {/** HERO SECTION **/}
 
       <section className="stall-hero">
         <div className="stall-hero-copy">
@@ -131,6 +193,7 @@ export default function Vendors() {
 
           <div className="stall-hero-note">
             <span>✳</span>
+
             {v.heroNote}
           </div>
         </div>
@@ -144,9 +207,13 @@ export default function Vendors() {
 
           <div className="stall-hero-sticker">
             {v.sticker1}
+
             <br />
+
             {v.sticker2}
+
             <br />
+
             {v.sticker3}
           </div>
 
@@ -154,10 +221,10 @@ export default function Vendors() {
         </div>
       </section>
 
-      {/* FILTER SECTION */}
+      {/** FILTER SECTION **/}
 
       <section className="stall-filters" aria-label={v.search}>
-        {/* CITY */}
+        {/** CITY **/}
 
         <label className="filter-control">
           <MapPin size={19} />
@@ -166,17 +233,19 @@ export default function Vendors() {
             value={city}
             onChange={(e) => {
               setCity(e.target.value);
+
               setPage(1);
             }}
           >
             <option value="Mumbai">{v.mumbai}</option>
+
             <option value="All Cities">{v.allCities}</option>
           </select>
 
           <ChevronDown size={16} />
         </label>
 
-        {/* DATE */}
+        {/** DATE **/}
 
         <label className="filter-control">
           <CalendarDays size={19} />
@@ -185,18 +254,21 @@ export default function Vendors() {
             value={dateFilter}
             onChange={(e) => {
               setDateFilter(e.target.value);
+
               setPage(1);
             }}
           >
             <option value="All Dates">{v.allDates}</option>
+
             <option value="December 2026">{v.december}</option>
+
             <option value="January 2027">{v.january}</option>
           </select>
 
           <ChevronDown size={16} />
         </label>
 
-        {/* CATEGORY */}
+        {/** CATEGORY **/}
 
         <label className="filter-control">
           <Tag size={19} />
@@ -205,6 +277,7 @@ export default function Vendors() {
             value={category}
             onChange={(e) => {
               setCategory(e.target.value);
+
               setPage(1);
             }}
           >
@@ -217,7 +290,9 @@ export default function Vendors() {
                 ),
               ),
             ]
+
               .sort()
+
               .map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -228,7 +303,7 @@ export default function Vendors() {
           <ChevronDown size={16} />
         </label>
 
-        {/* SEARCH */}
+        {/** SEARCH **/}
 
         <label className="filter-search">
           <Search size={19} />
@@ -237,6 +312,7 @@ export default function Vendors() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
+
               setPage(1);
             }}
             placeholder={v.searchPlaceholder}
@@ -248,7 +324,7 @@ export default function Vendors() {
         </button>
       </section>
 
-      {/* EVENTS SECTION */}
+      {/** EVENTS SECTION **/}
 
       <section className="stall-events-section">
         <div className="stall-section-heading">
@@ -262,7 +338,7 @@ export default function Vendors() {
             <p>{v.sectionDescription}</p>
           </div>
 
-          {/* SORT */}
+          {/** SORT **/}
 
           <label className="stall-sort">
             <span>{v.sortBy}</span>
@@ -271,23 +347,47 @@ export default function Vendors() {
               value={sort}
               onChange={(e) => {
                 setSort(e.target.value);
+
                 setPage(1);
               }}
             >
               <option value="soonest">{v.soonest}</option>
+
               <option value="latest">{v.latest}</option>
+
               <option value="name">{v.eventName}</option>
             </select>
           </label>
         </div>
 
-        {/* EVENT CARDS */}
+        <div className="events-membership-banner">
+          <div className="events-membership-copy">
+            <strong>
+              {hasMembership
+                ? `${membership.name} Membership Active`
+                : "Preview Access – 3 Events"}
+            </strong>
+            <p>
+              {hasMembership
+                ? "Your membership is active. You can explore all available events."
+                : "Explore your first 3 events. Activate a vendor membership to unlock all events."}
+            </p>
+          </div>
+          <Link
+            to={hasMembership ? "/vendor/profile" : "/vendor/membership"}
+            className="events-membership-button"
+          >
+            {hasMembership ? "View Membership" : "Unlock All Events"}
+          </Link>
+        </div>
+
+        {/** EVENT CARDS **/}
 
         {visibleEvents.length > 0 ? (
           <div className="stall-event-grid">
             {visibleEvents.map((event) => (
               <article className="stall-event-card" key={event.id}>
-                {/* EVENT IMAGE */}
+                {/** EVENT IMAGE **/}
 
                 <div className="stall-card-image">
                   <img
@@ -309,7 +409,7 @@ export default function Vendors() {
                       : v.stallsOpen}
                   </span>
 
-                  {/* FAVORITE */}
+                  {/** FAVORITE **/}
 
                   <button
                     className={`stall-favorite ${
@@ -331,7 +431,7 @@ export default function Vendors() {
                   </button>
                 </div>
 
-                {/* EVENT DETAILS */}
+                {/** EVENT DETAILS **/}
 
                 <div className="stall-card-body">
                   <div className="stall-card-main">
@@ -339,22 +439,25 @@ export default function Vendors() {
 
                     <p>
                       <MapPin size={15} />
+
                       <span>{event.venue}</span>
                     </p>
 
                     <p>
                       <Clock size={15} />
+
                       <span>{event.time}</span>
                     </p>
 
                     <p>
                       <UserRound size={15} />
+
                       <span>
                         {v.by} {event.organiser}
                       </span>
                     </p>
 
-                    {/* CATEGORIES */}
+                    {/** CATEGORIES **/}
 
                     <div className="stall-card-tags">
                       {(event.category || []).map((tag) => (
@@ -363,12 +466,14 @@ export default function Vendors() {
                     </div>
                   </div>
 
-                  {/* ORGANISER AND BUTTON */}
+                  {/** ORGANISER AND BUTTON **/}
 
                   <div className="stall-card-side">
                     <div className="stall-organiser-mark">
                       {(event.logo || event.organiser || "EVENT")
+
                         .split("\n")
+
                         .map((line, index) => (
                           <span key={`${line}-${index}`}>{line}</span>
                         ))}
@@ -379,6 +484,7 @@ export default function Vendors() {
                       to={`/event/${event.id}`}
                     >
                       {v.viewMore}
+
                       <ArrowRight size={16} />
                     </Link>
                   </div>
@@ -387,8 +493,6 @@ export default function Vendors() {
             ))}
           </div>
         ) : (
-          /* EMPTY STATE */
-
           <div className="stall-empty">
             <span className="stall-empty-symbol">✳</span>
 
@@ -400,7 +504,21 @@ export default function Vendors() {
           </div>
         )}
 
-        {/* PAGINATION */}
+        {!hasMembership && lockedCount > 0 && (
+          <div className="events-locked-section">
+            <div className="events-lock-icon">🔒</div>
+            <h3>{lockedCount} More Events Waiting for You!</h3>
+            <p>
+              Unlock all event opportunities and explore every available event
+              with a vendor membership.
+            </p>
+            <Link to="/vendor/membership" className="events-membership-button">
+              Explore Membership Plans <ArrowRight size={16} />
+            </Link>
+          </div>
+        )}
+
+        {/** PAGINATION **/}
 
         {pageCount > 1 && (
           <nav className="stall-pagination" aria-label={v.pagination}>

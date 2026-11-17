@@ -1,335 +1,255 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import {
-  Globe,
-  ChevronDown,
   Menu,
   X,
-  Tent,
-  CalendarDays,
   Store,
-  LayoutDashboard,
-  UserRound,
-  Plus,
-  Image,
-  Crown,
+  User,
   LogOut,
+  ChevronDown,
+  Globe,
+  CalendarDays,
+  LayoutDashboard,
   Settings,
-  CreditCard,
 } from "lucide-react";
-
-import { useLanguage } from "../context/LanguageContext";
 
 import "../css/Navbar.css";
 
-const ORGANISER_KEY = "stalloraOrganiser";
-
 export default function Navbar() {
-  const { language, changeLanguage, t } = useLanguage();
-
-  const location = useLocation();
   const navigate = useNavigate();
 
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
-  // ==========================================
-  // LOAD ORGANISER
-  // ==========================================
+  const [user, setUser] = useState(null);
+  const [organiser, setOrganiser] = useState(null);
+  const [vendor, setVendor] = useState(null);
+  const [vendorMembership, setVendorMembership] = useState(null);
 
-  const getOrganiser = () => {
+  const [language, setLanguage] = useState("English");
+
+  // LOAD ACCOUNTS
+  const loadAccounts = () => {
     try {
-      const saved = localStorage.getItem(ORGANISER_KEY);
-      return saved ? JSON.parse(saved) : null;
+      const savedUser =
+        localStorage.getItem("user") || localStorage.getItem("stalloraUser");
+
+      const savedOrganiser = localStorage.getItem("stalloraOrganiser");
+
+      const savedVendor = localStorage.getItem("stalloraVendor");
+
+      const vendorLoggedIn =
+        localStorage.getItem("stalloraVendorSession") === "true";
+
+      setUser(savedUser ? JSON.parse(savedUser) : null);
+
+      setOrganiser(savedOrganiser ? JSON.parse(savedOrganiser) : null);
+
+      setVendor(vendorLoggedIn && savedVendor ? JSON.parse(savedVendor) : null);
+
+      const savedMembership = localStorage.getItem("stalloraVendorMembership");
+
+      if (vendorLoggedIn && savedMembership) {
+        const membership = JSON.parse(savedMembership);
+
+        const active =
+          membership.status === "active" &&
+          new Date(membership.expiresAt) > new Date();
+
+        setVendorMembership(active ? membership : null);
+      } else {
+        setVendorMembership(null);
+      }
     } catch (error) {
-      console.error("Unable to load organiser:", error);
-      return null;
+      console.error("Navbar account error:", error);
+      setUser(null);
+      setOrganiser(null);
+      setVendor(null);
+      setVendorMembership(null);
     }
   };
 
-  const [organiser, setOrganiser] = useState(getOrganiser);
-
-  // ==========================================
-  // LISTEN FOR PROFILE UPDATES
-  // ==========================================
-
   useEffect(() => {
-    const loadOrganiser = () => {
-      setOrganiser(getOrganiser());
-    };
+    loadAccounts();
 
-    loadOrganiser();
-
-    window.addEventListener(
-      "stallora:organiser-updated",
-      loadOrganiser
-    );
-
-    window.addEventListener("storage", loadOrganiser);
+    window.addEventListener("storage", loadAccounts);
+    window.addEventListener("stallora-user-updated", loadAccounts);
+    window.addEventListener("stallora-vendor-updated", loadAccounts);
 
     return () => {
-      window.removeEventListener(
-        "stallora:organiser-updated",
-        loadOrganiser
-      );
-
-      window.removeEventListener("storage", loadOrganiser);
+      window.removeEventListener("storage", loadAccounts);
+      window.removeEventListener("stallora-user-updated", loadAccounts);
+      window.removeEventListener("stallora-vendor-updated", loadAccounts);
     };
   }, []);
 
-  // ==========================================
-  // CLOSE MENUS WHEN ROUTE CHANGES
-  // ==========================================
-
+  // LANGUAGE
   useEffect(() => {
-    setMobileOpen(false);
+    const saved = localStorage.getItem("stalloraLanguage");
+    if (saved) setLanguage(saved);
+  }, []);
+
+  const changeLanguage = (value) => {
+    setLanguage(value);
+    localStorage.setItem("stalloraLanguage", value);
+    setLanguageOpen(false);
+  };
+
+  // ACCOUNT TYPE
+  const accountType = vendor
+    ? "vendor"
+    : organiser
+      ? "organiser"
+      : user
+        ? "user"
+        : null;
+
+  const currentUser =
+    accountType === "vendor"
+      ? vendor
+      : accountType === "organiser"
+        ? organiser
+        : user;
+
+  const isLoggedIn = Boolean(currentUser);
+
+  const userName =
+    currentUser?.name ||
+    currentUser?.fullName ||
+    currentUser?.organiserName ||
+    "My Account";
+
+  const userEmail = currentUser?.email || "";
+
+  const profileImage =
+    currentUser?.profileImage ||
+    currentUser?.avatar ||
+    currentUser?.image ||
+    "";
+
+  const profileInitial = userName.charAt(0).toUpperCase();
+
+  // CLOSE MENUS
+  const closeMenu = () => {
+    setMenuOpen(false);
     setProfileOpen(false);
     setLanguageOpen(false);
-  }, [location.pathname]);
+  };
 
-  // ==========================================
-  // CLOSE MENUS WITH ESCAPE KEY
-  // ==========================================
+  // LOGOUT
+  const handleLogout = () => {
+    if (accountType === "vendor") {
+      localStorage.removeItem("stalloraVendorSession");
 
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setMobileOpen(false);
-        setProfileOpen(false);
-        setLanguageOpen(false);
-      }
-    };
+      setVendor(null);
+      setVendorMembership(null);
 
-    window.addEventListener("keydown", handleEscape);
+      window.dispatchEvent(new Event("stallora-vendor-updated"));
 
-    return () => {
-      window.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
+      closeMenu();
+      navigate("/vendor/login");
+      return;
+    }
 
-  // ==========================================
-  // LANGUAGE
-  // ==========================================
+    if (accountType === "organiser") {
+      localStorage.removeItem("stalloraOrganiser");
+      setOrganiser(null);
 
-  const languages = [
-    { code: "en", label: "English" },
-    { code: "hi", label: "हिन्दी" },
-    { code: "mr", label: "मराठी" },
+      closeMenu();
+      navigate("/organiser/register");
+      return;
+    }
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("stalloraUser");
+
+    setUser(null);
+
+    closeMenu();
+    navigate("/login");
+  };
+
+  // NAV LINKS
+  const navItems = [
+    { label: "Home", path: "/" },
+    { label: "Explore Events", path: "/events" },
+    { label: "About", path: "/about" },
   ];
 
-  const currentLanguage =
-    languages.find((item) => item.code === language) ||
-    languages[0];
+  // MEMBERSHIP LABEL
+  const membershipLabel = () => {
+    if (accountType === "vendor") {
+      return vendorMembership ? (
+        <small className="gold">
+          {vendorMembership.name?.toUpperCase()} MEMBERSHIP
+        </small>
+      ) : (
+        <small className="st-membership-pending">Membership not active</small>
+      );
+    }
 
-  const handleLanguageChange = (code) => {
-    changeLanguage(code);
-    setLanguageOpen(false);
-  };
+    if (accountType === "organiser") {
+      const plan = String(
+        currentUser?.membership ||
+          currentUser?.membershipName ||
+          currentUser?.planName ||
+          "",
+      ).toLowerCase();
 
-  // ==========================================
-  // ORGANISER DETAILS
-  // ==========================================
+      const status = String(
+        currentUser?.membershipStatus || currentUser?.membership_status || "",
+      ).toLowerCase();
 
-  const organiserName =
-    organiser?.company ||
-    organiser?.name ||
-    "Organiser";
+      const verified =
+        currentUser?.paymentVerified === true ||
+        currentUser?.isPaymentVerified === true;
 
-  const username =
-    organiser?.username ||
-    "organiser";
-
-  const membership =
-    organiser?.membershipName ||
-    organiser?.planName ||
-    (organiser?.membership === "gold" ? "Gold" : "Silver");
-
-  const membershipStatus =
-    organiser?.membershipStatus || "pending_payment";
-
-  const initials = organiserName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase() || "O";
-
-  // ==========================================
-  // LOGOUT
-  // ==========================================
-
-  const handleLogout = () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to log out?"
-    );
-
-    if (!confirmed) return;
-
-    localStorage.removeItem(ORGANISER_KEY);
-    localStorage.removeItem("stalloraSelectedPlan");
-    localStorage.removeItem("stalloraPendingOrganiser");
-
-    setOrganiser(null);
-
-    setProfileOpen(false);
-    setMobileOpen(false);
-    setLanguageOpen(false);
-
-    window.dispatchEvent(
-      new Event("stallora:organiser-updated")
-    );
-
-    navigate("/");
-  };
-
-  // ==========================================
-  // ORGANISER PROFILE MENU
-  // ==========================================
-
-  const OrganiserProfileMenu = ({ mobile = false }) => (
-    <div
-      className={
-        mobile
-          ? "st-mobile-profile"
-          : "st-profile-dropdown"
+      if (
+        ["silver", "gold"].includes(plan) &&
+        status === "active" &&
+        verified
+      ) {
+        return <small className={plan}>{plan.toUpperCase()} PLAN</small>;
       }
-    >
-      {/* ORGANISER DETAILS */}
 
-      <div className="st-dropdown-user">
+      return (
+        <small className="st-membership-pending">
+          Membership payment pending
+        </small>
+      );
+    }
 
-        <div className="st-dropdown-avatar">
-          {organiser?.profileImage ? (
-            <img
-              src={organiser.profileImage}
-              alt={`${organiserName} profile`}
-            />
-          ) : (
-            initials
-          )}
-        </div>
-
-        <div className="st-dropdown-user-info">
-
-          <strong>{organiserName}</strong>
-
-          <span>@{username}</span>
-
-          <small className={membership.toLowerCase()}>
-            <Crown size={12} />
-            {membership} Member
-          </small>
-
-          {membershipStatus !== "active" && (
-            <small className="st-membership-pending">
-              Payment verification pending
-            </small>
-          )}
-
-        </div>
-      </div>
-
-      <div className="st-dropdown-divider" />
-
-      {/* PROFILE */}
-
-      <Link
-        to="/organiser/profile"
-        className="st-dropdown-link"
-      >
-        <UserRound size={17} />
-        My Profile
-      </Link>
-
-      {/* DASHBOARD */}
-
-      <Link
-        to="/organiser/dashboard"
-        className="st-dropdown-link"
-      >
-        <LayoutDashboard size={17} />
-        My Dashboard
-      </Link>
-
-      {/* CREATE EVENT */}
-
-      <Link
-        to="/organiser/create-event"
-        className="st-dropdown-link"
-      >
-        <Plus size={17} />
-        Create Event
-      </Link>
-
-      {/* POSTS */}
-
-      <Link
-        to="/organiser/dashboard"
-        className="st-dropdown-link"
-      >
-        <Image size={17} />
-        My Posts
-      </Link>
-
-      {/* MEMBERSHIP */}
-
-      <Link
-        to="/organiser/membership"
-        className="st-dropdown-link"
-      >
-        <CreditCard size={17} />
-        Membership
-      </Link>
-
-      {/* EDIT PROFILE */}
-
-      <Link
-        to="/organiser/profile"
-        className="st-dropdown-link"
-      >
-        <Settings size={17} />
-        Edit Profile
-      </Link>
-
-      <div className="st-dropdown-divider" />
-
-      {/* LOGOUT */}
-
-      <button
-        type="button"
-        className="st-dropdown-logout"
-        onClick={handleLogout}
-      >
-        <LogOut size={17} />
-        Logout
-      </button>
-
-    </div>
-  );
-
-  // ==========================================
-  // NAVBAR
-  // ==========================================
+    return null;
+  };
 
   return (
     <header className="st-navbar">
-
       <div className="st-navbar-container">
-
-        {/* ==================================
-            LOGO
-        ================================== */}
-
-        <Link
-          to="/"
-          className="st-logo"
-          aria-label="STALLORA Home"
-        >
+        {/* LOGO */}
+        <Link to="/" className="st-logo" onClick={closeMenu}>
           <span className="st-logo-symbol">
-            <Tent size={39} strokeWidth={2.5} />
+            <svg
+              width="43"
+              height="43"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 39L24 8L40 39H8Z"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 39L24 24L32 39"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
           </span>
 
           <span className="st-logo-text">
@@ -337,288 +257,400 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* ==================================
-            DESKTOP NAVIGATION
-        ================================== */}
-
+        {/* DESKTOP NAVIGATION */}
         <nav className="st-desktop-nav">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={closeMenu}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              {item.label}
+            </NavLink>
+          ))}
 
-          <Link
-            to="/"
-            className={
-              location.pathname === "/" ? "active" : ""
-            }
+          {/* ORGANISER STALL REQUESTS */}
+          <NavLink
+            to="/organiser/stall-requests"
+            onClick={closeMenu}
+            className={({ isActive }) => (isActive ? "active" : "")}
           >
-            {t.navbar.home}
-          </Link>
+            <Store size={17} />
+            Stall Requests
+          </NavLink>
 
-          <Link
-            to="/vendors"
-            className={
-              location.pathname === "/vendors"
-                ? "active"
-                : ""
-            }
+          {/* VENDOR BROWSE STALLS - ALWAYS VISIBLE */}
+          <NavLink
+            to="/vendor/stalls"
+            onClick={closeMenu}
+            className={({ isActive }) => (isActive ? "active" : "")}
           >
-            Explore Events
-          </Link>
-
-          <Link
-            to="/about"
-            className={
-              location.pathname === "/about"
-                ? "active"
-                : ""
-            }
-          >
-            {t.navbar.about}
-          </Link>
-
+            <Store size={17} />
+            Browse Stalls
+          </NavLink>
         </nav>
 
-        {/* ==================================
-            DESKTOP ACTIONS
-        ================================== */}
-
+        {/* ACTIONS */}
         <div className="st-navbar-actions">
+          <Link
+            to="/organiser/register"
+            className="st-organiser-button"
+            onClick={closeMenu}
+          >
+            <CalendarDays size={18} />
+            Organise an Event
+          </Link>
 
-          {!organiser ? (
-
-            <>
-              <Link
-                to="/organiser/membership"
-                className="st-organiser-button"
-              >
-                <CalendarDays size={17} />
-                Organise an Event
-              </Link>
-
-              <Link
-                to="/vendor/login"
-                className="st-vendor-button"
-              >
-                <Store size={17} />
-                Book a Stall
-              </Link>
-            </>
-
-          ) : (
-
-            <div className="st-profile-wrapper">
-
-              <button
-                type="button"
-                className="st-profile-trigger"
-                onClick={() => {
-                  setProfileOpen((previous) => !previous);
-                  setLanguageOpen(false);
-                }}
-                aria-expanded={profileOpen}
-                aria-label="Open organiser menu"
-              >
-
-                <span className="st-navbar-avatar">
-
-                  {organiser.profileImage ? (
-                    <img
-                      src={organiser.profileImage}
-                      alt={organiserName}
-                    />
-                  ) : (
-                    initials
-                  )}
-
-                </span>
-
-                <span className="st-navbar-profile-name">
-                  {organiserName}
-                </span>
-
-                <ChevronDown
-                  size={16}
-                  className={profileOpen ? "rotated" : ""}
-                />
-
-              </button>
-
-              {profileOpen && <OrganiserProfileMenu />}
-
-            </div>
-
-          )}
-
-          {/* ==================================
-              LANGUAGE SELECTOR
-          ================================== */}
-
+          {/* LANGUAGE */}
           <div className="st-language-wrapper">
-
             <button
               type="button"
               className="st-language-button"
-              onClick={() => {
-                setLanguageOpen((previous) => !previous);
-                setProfileOpen(false);
-              }}
-              aria-expanded={languageOpen}
-              aria-label="Select language"
+              onClick={() => setLanguageOpen(!languageOpen)}
             >
-
               <Globe size={19} />
-
-              <span>{currentLanguage.label}</span>
-
-              <ChevronDown
-                size={15}
-                className={languageOpen ? "rotated" : ""}
-              />
-
+              {language}
+              <ChevronDown size={15} />
             </button>
 
             {languageOpen && (
-
               <div className="st-language-dropdown">
+                {["English", "Hindi", "Marathi"].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={language === item ? "active" : ""}
+                    onClick={() => changeLanguage(item)}
+                  >
+                    {item}
+                    {language === item && <span>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-                {languages.map((item) => (
+          {/* PROFILE */}
+          {isLoggedIn && (
+            <div className="st-profile-wrapper">
+              <button
+                type="button"
+                className="st-profile-trigger"
+                onClick={() => setProfileOpen(!profileOpen)}
+              >
+                <span className="st-navbar-avatar">
+                  {profileImage ? (
+                    <img src={profileImage} alt={userName} />
+                  ) : (
+                    profileInitial
+                  )}
+                </span>
+
+                <span className="st-navbar-profile-name">{userName}</span>
+
+                <ChevronDown size={16} />
+              </button>
+
+              {profileOpen && (
+                <div className="st-profile-dropdown">
+                  <div className="st-dropdown-user">
+                    <div className="st-dropdown-avatar">
+                      {profileImage ? (
+                        <img src={profileImage} alt={userName} />
+                      ) : (
+                        profileInitial
+                      )}
+                    </div>
+
+                    <div className="st-dropdown-user-info">
+                      <strong>{userName}</strong>
+                      <span>{userEmail}</span>
+                      {membershipLabel()}
+                    </div>
+                  </div>
+
+                  <div className="st-dropdown-divider" />
+
+                  {/* VENDOR LINKS */}
+                  {accountType === "vendor" && (
+                    <>
+                      <Link
+                        to="/vendor/stalls"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <Store size={17} />
+                        Browse Stalls
+                      </Link>
+
+                      <Link
+                        to="/vendor/profile"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <User size={17} />
+                        My Profile
+                      </Link>
+
+                      <Link
+                        to="/vendor/bookings"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <LayoutDashboard size={17} />
+                        My Bookings
+                      </Link>
+
+                      {!vendorMembership && (
+                        <Link
+                          to="/vendor/membership"
+                          className="st-dropdown-link"
+                          onClick={closeMenu}
+                        >
+                          <Settings size={17} />
+                          Get Membership
+                        </Link>
+                      )}
+                    </>
+                  )}
+
+                  {/* ORGANISER LINKS */}
+                  {accountType === "organiser" && (
+                    <>
+                      <Link
+                        to="/organiser/dashboard"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <LayoutDashboard size={17} />
+                        Dashboard
+                      </Link>
+
+                      <Link
+                        to="/organiser/stall-requests"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <Store size={17} />
+                        Stall Requests
+                      </Link>
+
+                      <Link
+                        to="/organiser/profile"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <Settings size={17} />
+                        My Profile
+                      </Link>
+                    </>
+                  )}
+
+                  {/* NORMAL USER */}
+                  {accountType === "user" && (
+                    <Link
+                      to="/profile"
+                      className="st-dropdown-link"
+                      onClick={closeMenu}
+                    >
+                      <User size={17} />
+                      My Profile
+                    </Link>
+                  )}
+
+                  <div className="st-dropdown-divider" />
 
                   <button
                     type="button"
-                    key={item.code}
-                    className={
-                      language === item.code ? "active" : ""
-                    }
-                    onClick={() =>
-                      handleLanguageChange(item.code)
-                    }
+                    className="st-dropdown-logout"
+                    onClick={handleLogout}
                   >
-
-                    {item.label}
-
-                    {language === item.code && (
-                      <span>✓</span>
-                    )}
-
+                    <LogOut size={17} />
+                    Logout
                   </button>
-
-                ))}
-
-              </div>
-
-            )}
-
-          </div>
-
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* ==================================
-            MOBILE MENU BUTTON
-        ================================== */}
-
+        {/* MOBILE BUTTON */}
         <button
           type="button"
           className="st-mobile-toggle"
-          onClick={() =>
-            setMobileOpen((previous) => !previous)
-          }
-          aria-label={
-            mobileOpen
-              ? "Close navigation menu"
-              : "Open navigation menu"
-          }
-          aria-expanded={mobileOpen}
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
         >
-          {mobileOpen ? (
-            <X size={25} />
-          ) : (
-            <Menu size={25} />
-          )}
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
-      </div>
+        {/* MOBILE MENU */}
+        {menuOpen && (
+          <div className="st-mobile-menu">
+            {navItems.map((item) => (
+              <NavLink key={item.path} to={item.path} onClick={closeMenu}>
+                {item.label}
+              </NavLink>
+            ))}
 
-      {/* ==================================
-          MOBILE NAVIGATION
-      ================================== */}
+            <div className="st-mobile-divider" />
 
-      {mobileOpen && (
-
-        <div className="st-mobile-menu">
-
-          <Link to="/">
-            {t.navbar.home}
-          </Link>
-
-          <Link to="/vendors">
-            Explore Events
-          </Link>
-
-          <Link to="/about">
-            {t.navbar.about}
-          </Link>
-
-          <div className="st-mobile-divider" />
-
-          {!organiser ? (
-
-            <>
-
-              <Link
-                to="/organiser/membership"
-                className="st-mobile-organiser"
-              >
-                <CalendarDays size={18} />
-                Organise an Event
-              </Link>
-
-              <Link
-                to="/vendor/login"
-                className="st-mobile-vendor"
-              >
-                <Store size={18} />
-                Book a Stall
-              </Link>
-
-            </>
-
-          ) : (
-
-            <OrganiserProfileMenu mobile />
-
-          )}
-
-          {/* MOBILE LANGUAGE */}
-
-          <div className="st-mobile-language">
-
-            <Globe size={18} />
-
-            <select
-              value={language}
-              onChange={(e) =>
-                handleLanguageChange(e.target.value)
-              }
-              aria-label="Select language"
+            <NavLink
+              to="/organiser/stall-requests"
+              className="st-mobile-organiser"
+              onClick={closeMenu}
             >
+              <Store size={18} />
+              Stall Requests
+            </NavLink>
 
-              {languages.map((item) => (
+            {/* BROWSE STALLS ALWAYS VISIBLE ON MOBILE */}
+            <NavLink
+              to="/vendor/stalls"
+              className="st-mobile-vendor"
+              onClick={closeMenu}
+            >
+              <Store size={18} />
+              Browse Stalls
+            </NavLink>
 
-                <option
-                  key={item.code}
-                  value={item.code}
+            <Link
+              to="/organiser/register"
+              className="st-mobile-organiser"
+              onClick={closeMenu}
+            >
+              <CalendarDays size={18} />
+              Organise an Event
+            </Link>
+
+            {isLoggedIn && (
+              <div className="st-mobile-profile">
+                <div className="st-dropdown-user">
+                  <div className="st-dropdown-avatar">{profileInitial}</div>
+
+                  <div className="st-dropdown-user-info">
+                    <strong>{userName}</strong>
+                    <span>{userEmail}</span>
+                    {membershipLabel()}
+                  </div>
+                </div>
+
+                <div className="st-dropdown-divider" />
+
+                {accountType === "vendor" && (
+                  <>
+                    <Link
+                      to="/vendor/profile"
+                      className="st-dropdown-link"
+                      onClick={closeMenu}
+                    >
+                      <User size={17} />
+                      My Profile
+                    </Link>
+
+                    <Link
+                      to="/vendor/bookings"
+                      className="st-dropdown-link"
+                      onClick={closeMenu}
+                    >
+                      <LayoutDashboard size={17} />
+                      My Bookings
+                    </Link>
+
+                    {!vendorMembership && (
+                      <Link
+                        to="/vendor/membership"
+                        className="st-dropdown-link"
+                        onClick={closeMenu}
+                      >
+                        <Settings size={17} />
+                        Get Membership
+                      </Link>
+                    )}
+                  </>
+                )}
+
+                {accountType === "organiser" && (
+                  <>
+                    <Link
+                      to="/organiser/dashboard"
+                      className="st-dropdown-link"
+                      onClick={closeMenu}
+                    >
+                      <LayoutDashboard size={17} />
+                      Dashboard
+                    </Link>
+
+                    <Link
+                      to="/organiser/profile"
+                      className="st-dropdown-link"
+                      onClick={closeMenu}
+                    >
+                      <User size={17} />
+                      My Profile
+                    </Link>
+                  </>
+                )}
+
+                {accountType === "user" && (
+                  <Link
+                    to="/profile"
+                    className="st-dropdown-link"
+                    onClick={closeMenu}
+                  >
+                    <User size={17} />
+                    My Profile
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  className="st-dropdown-logout"
+                  onClick={handleLogout}
                 >
-                  {item.label}
-                </option>
+                  <LogOut size={17} />
+                  Logout
+                </button>
+              </div>
+            )}
 
-              ))}
+            <div className="st-mobile-language">
+              <Globe size={18} />
+              <select
+                value={language}
+                onChange={(event) => changeLanguage(event.target.value)}
+              >
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Marathi">Marathi</option>
+              </select>
+            </div>
 
-            </select>
+            {!isLoggedIn && (
+              <>
+                <Link
+                  to="/vendor/login"
+                  className="st-dropdown-link"
+                  onClick={closeMenu}
+                >
+                  <User size={17} />
+                  Vendor Login
+                </Link>
 
+                <Link
+                  to="/vendor/register"
+                  className="st-dropdown-link"
+                  onClick={closeMenu}
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
-
-        </div>
-
-      )}
-
+        )}
+      </div>
     </header>
   );
 }

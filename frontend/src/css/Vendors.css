@@ -820,3 +820,76 @@
           font-size: 9px;
      }
 }
+
+.events-membership-banner {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     gap: 20px;
+     padding: 22px 26px;
+     margin: 25px 0;
+     border: 1px solid #e5d4f1;
+     border-radius: 18px;
+     background: linear-gradient(110deg, #f3e9fa, #fff);
+}
+
+.events-membership-banner strong {
+     font-size: 17px;
+     color: #54277c;
+}
+
+.events-membership-banner p {
+     margin-top: 7px;
+     color: #786d7d;
+     font-size: 13px;
+}
+
+.events-membership-button {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+     padding: 13px 23px;
+     border-radius: 30px;
+     background: #7137a8;
+     color: white;
+     text-decoration: none;
+     font-weight: 700;
+     font-size: 13px;
+}
+
+.events-locked-section {
+     margin-top: 35px;
+     padding: 45px 20px;
+     text-align: center;
+     border: 1px dashed #b99aca;
+     border-radius: 20px;
+     background: linear-gradient(135deg, #f5edfa, #fff);
+}
+
+.events-lock-icon {
+     font-size: 38px;
+     margin-bottom: 12px;
+}
+
+.events-locked-section h3 {
+     color: #54277c;
+     font-size: 23px;
+     margin-bottom: 10px;
+}
+
+.events-locked-section p {
+     color: #786d7d;
+     margin-bottom: 22px;
+}
+
+@media (max-width: 600px) {
+     .events-membership-banner {
+          flex-direction: column;
+          align-items: stretch;
+     }
+
+     .events-membership-button {
+          width: 100%;
+     }
+}

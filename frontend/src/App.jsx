@@ -1,6 +1,13 @@
 import { useEffect } from "react";
 
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+  Link,
+} from "react-router-dom";
 
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
@@ -32,6 +39,25 @@ import OrganiserProfile from "./pages/OrganiserProfile";
 import OrganiserDashboard from "./pages/OrganiserDashboard";
 import CreateEvent from "./pages/CreateEvent";
 import CreatePost from "./pages/CreatePost";
+import StallForOrganiser from "./pages/StallForOrganiser";
+
+// ==========================================
+// USER PROFILE
+// ==========================================
+
+import Profile from "./pages/Profile";
+
+// ==========================================
+// VENDOR PAGES
+// ==========================================
+
+import VendorLogin from "./pages/VendorLogin";
+import VendorRegister from "./pages/VendorRegister";
+import VendorStalls from "./pages/VendorStalls";
+import VendorMembership from "./pages/VendorMembership";
+import VendorPaymentSuccess from "./pages/VendorPaymentSuccess";
+import VendorProfile from "./pages/VendorProfile";
+import VendorBookings from "./pages/VendorBookings";
 
 // ==========================================
 // GLOBAL CSS
@@ -69,7 +95,6 @@ function SmoothScroll() {
     };
   }, [pathname]);
 
-  // Scroll to top whenever the route changes.
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -82,41 +107,26 @@ function SmoothScroll() {
 }
 
 // ==========================================
-// PAGE NOT FOUND
+// 404 PAGE
 // ==========================================
 
 function NotFound() {
   return (
-    <main
-      style={{
-        minHeight: "65vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "40px 20px",
-        textAlign: "center",
-      }}
-    >
-      <h1>404</h1>
+    <main className="not-found-page">
+      <div className="not-found-content">
+        <span className="not-found-number">404</span>
 
-      <h2>Page not found</h2>
+        <h1>PAGE NOT FOUND</h1>
 
-      <p>The page you're looking for doesn't exist.</p>
+        <p>
+          Oops! The page you're looking for doesn't exist or may have been
+          moved.
+        </p>
 
-      <a
-        href="/"
-        style={{
-          marginTop: "20px",
-          padding: "13px 25px",
-          borderRadius: "30px",
-          background: "#7439a6",
-          color: "#fff",
-          textDecoration: "none",
-        }}
-      >
-        Back to Home
-      </a>
+        <Link to="/" className="not-found-button">
+          Back to Home
+        </Link>
+      </div>
     </main>
   );
 }
@@ -128,77 +138,124 @@ function NotFound() {
 function AppLayout() {
   return (
     <div className="app">
-      {/* SMOOTH SCROLL */}
-
       <SmoothScroll />
 
-      {/* NAVBAR */}
+      {/* GLOBAL NAVBAR */}
 
       <Navbar />
 
-      {/* APPLICATION ROUTES */}
+      {/* =====================================
+          APPLICATION ROUTES
+      ===================================== */}
 
       <Routes>
-        {/* HOME */}
+        {/* =====================================
+            PUBLIC PAGES
+        ===================================== */}
 
         <Route path="/" element={<Home />} />
 
-        {/* EVENTS / VENDORS */}
+        <Route path="/events" element={<Vendors />} />
 
         <Route path="/vendors" element={<Vendors />} />
 
-        {/* ABOUT */}
-
         <Route path="/about" element={<About />} />
-
-        {/* EVENT DETAILS */}
 
         <Route path="/event/:eventId" element={<EventDetails />} />
 
-        {/* STALL BOOKING */}
-
         <Route path="/book/:eventId" element={<Booking />} />
 
-        {/* ==================================
-             ORGANISER ROUTES
-        ================================== */}
-
-        {/* ORGANISER MEMBERSHIP */}
-
-        <Route path="/organiser/membership" element={<OrganiserMembership />} />
-
-        {/* ORGANISER REGISTRATION */}
+        {/* =====================================
+            ORGANISER ROUTES
+        ===================================== */}
 
         <Route path="/organiser/register" element={<OrganiserRegister />} />
 
-        {/* ORGANISER PROFILE */}
+        <Route path="/organiser/membership" element={<OrganiserMembership />} />
 
         <Route path="/organiser/profile" element={<OrganiserProfile />} />
 
-        {/* ORGANISER DASHBOARD */}
-
         <Route path="/organiser/dashboard" element={<OrganiserDashboard />} />
-
-        {/* CREATE EVENT */}
 
         <Route path="/organiser/create-event" element={<CreateEvent />} />
 
-        {/* CREATE POST */}
-
         <Route path="/organiser/create-post" element={<CreatePost />} />
 
-        {/* FUTURE ORGANISER LOGIN ROUTE */}
+        <Route
+          path="/organiser/stall-requests"
+          element={<StallForOrganiser />}
+        />
 
-        {/* Add OrganiserLogin here when its page is created. */}
+        {/* =====================================
+            VENDOR ROUTES
+        ===================================== */}
 
-        {/* ==================================
-             FALLBACK
-        ================================== */}
+        {/* DEFAULT VENDOR PAGE */}
+
+        <Route
+          path="/vendor"
+          element={<Navigate to="/vendor/stalls" replace />}
+        />
+
+        {/* VENDOR LOGIN */}
+
+        <Route path="/vendor/login" element={<VendorLogin />} />
+
+        {/* VENDOR REGISTRATION */}
+
+        <Route path="/vendor/register" element={<VendorRegister />} />
+
+        {/* VENDOR EVENT DISCOVERY */}
+
+        <Route path="/vendor/stalls" element={<VendorStalls />} />
+
+        {/* VENDOR MEMBERSHIP */}
+
+        <Route path="/vendor/membership" element={<VendorMembership />} />
+
+        {/* VENDOR PAYMENT SUCCESS */}
+
+        <Route
+          path="/vendor/payment-success"
+          element={<VendorPaymentSuccess />}
+        />
+
+        {/* VENDOR PROFILE */}
+
+        <Route path="/vendor/profile" element={<VendorProfile />} />
+
+        {/* VENDOR BOOKINGS */}
+
+        <Route path="/vendor/bookings" element={<VendorBookings />} />
+
+        {/* =====================================
+            USER PROFILE
+        ===================================== */}
+
+        <Route path="/profile" element={<Profile />} />
+
+        {/* =====================================
+            LEGACY REDIRECTS
+        ===================================== */}
+
+        <Route
+          path="/login"
+          element={<Navigate to="/vendor/login" replace />}
+        />
+
+        <Route
+          path="/organiser/login"
+          element={<Navigate to="/organiser/register" replace />}
+        />
+
+        {/* =====================================
+            404 PAGE
+        ===================================== */}
 
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* FOOTER */}
+      {/* GLOBAL FOOTER */}
 
       <Footer />
     </div>
