@@ -1,13 +1,13 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import {
-  Check,
+  CheckCircle,
   Crown,
-  Sparkles,
-  Star,
   ArrowRight,
   ShieldCheck,
+  Zap,
+  Star,
 } from "lucide-react";
 
 import "../css/VendorFlow.css";
@@ -16,7 +16,7 @@ import "../css/VendorFlow.css";
 // MEMBERSHIP PLANS
 // ==========================================
 
-const PLANS = [
+const MEMBERSHIP_PLANS = [
   {
     id: "basic",
     name: "Basic",
@@ -24,15 +24,17 @@ const PLANS = [
     months: 1,
     discount: 10,
     events: 2,
-    description: "A simple start for new vendors.",
+    description: "Perfect for vendors getting started.",
     icon: Star,
     features: [
-      "Preview and unlock all approved events",
-      "10% stall booking discount",
+      "1 month membership",
+      "10% discount on stall bookings",
       "Discount on up to 2 events",
-      "Vendor membership in your profile",
+      "Access to all available events",
+      "Vendor membership profile",
     ],
   },
+
   {
     id: "growth",
     name: "Growth",
@@ -40,16 +42,19 @@ const PLANS = [
     months: 3,
     discount: 20,
     events: 5,
-    description: "More reach and more booking opportunities.",
+    description: "Grow your brand and reach more customers.",
+    icon: Zap,
     popular: true,
-    icon: Sparkles,
     features: [
-      "Preview and unlock all approved events",
-      "20% stall booking discount",
+      "3 months membership",
+      "20% discount on stall bookings",
       "Discount on up to 5 events",
-      "Vendor membership in your profile",
+      "Access to all available events",
+      "Vendor membership profile",
+      "More event opportunities",
     ],
   },
+
   {
     id: "premium",
     name: "Premium",
@@ -57,19 +62,25 @@ const PLANS = [
     months: 12,
     discount: 30,
     events: 36,
-    description: "The complete year-round vendor advantage.",
+    description: "For vendors ready to expand their business.",
     icon: Crown,
     features: [
-      "Preview and unlock all approved events",
-      "30% stall booking discount",
+      "12 months membership",
+      "30% discount on stall bookings",
       "Discount on up to 36 events",
-      "Year-round vendor membership",
+      "Access to all available events",
+      "Vendor membership profile",
+      "Maximum membership benefits",
     ],
   },
 ];
 
+const VENDOR_SESSION_KEY = "stalloraVendorSession";
+const VENDOR_KEY = "stalloraVendor";
+const PENDING_PLAN_KEY = "stalloraPendingVendorPlan";
+
 // ==========================================
-// VENDOR MEMBERSHIP
+// COMPONENT
 // ==========================================
 
 export default function VendorMembership() {
@@ -77,260 +88,309 @@ export default function VendorMembership() {
 
   const [selectedPlan, setSelectedPlan] = useState("growth");
   const [vendor, setVendor] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // ========================================
+  // ==========================================
   // CHECK VENDOR LOGIN
-  // ========================================
+  // ==========================================
 
   useEffect(() => {
-    const isLoggedIn =
-      localStorage.getItem("stalloraVendorSession") === "true";
+    const isLoggedIn = localStorage.getItem(VENDOR_SESSION_KEY) === "true";
 
-    let savedVendor = null;
+    if (!isLoggedIn) {
+      navigate("/vendor/login", {
+        replace: true,
+      });
 
-    try {
-      savedVendor = JSON.parse(
-        localStorage.getItem("stalloraVendor") || "null"
-      );
-    } catch (error) {
-      console.error("Unable to read vendor account:", error);
-    }
-
-    if (!isLoggedIn || !savedVendor) {
-      navigate("/vendor/login", { replace: true });
       return;
     }
 
-    setVendor(savedVendor);
+    try {
+      const savedVendor = JSON.parse(
+        localStorage.getItem(VENDOR_KEY) || "null",
+      );
+
+      setVendor(savedVendor || {});
+    } catch (error) {
+      console.error("Unable to read vendor details:", error);
+      setVendor({});
+    }
   }, [navigate]);
 
-  // ========================================
-  // SELECTED PLAN
-  // ========================================
+  // ==========================================
+  // SELECT PLAN
+  // ==========================================
 
-  const activePlan = PLANS.find(
-    (plan) => plan.id === selectedPlan
-  );
-
-  // ========================================
-  // CONTINUE TO PAYMENT
-  // ========================================
-
-  const continueToPayment = () => {
-    if (!activePlan || !vendor) return;
-
-    const pendingPlan = {
-      id: activePlan.id,
-      name: activePlan.name,
-      price: activePlan.price,
-      months: activePlan.months,
-      discount: activePlan.discount,
-      events: activePlan.events,
-      vendorId: vendor.id,
-      vendorEmail: vendor.email,
-    };
-
-    localStorage.setItem(
-      "stalloraPendingVendorPlan",
-      JSON.stringify(pendingPlan)
-    );
-
-    // DEMO ONLY:
-    // Replace with Razorpay checkout after backend integration.
-
-    navigate("/vendor/payment-success", {
-      state: { demo: true },
-    });
+  const handleSelectPlan = (planId) => {
+    setSelectedPlan(planId);
   };
 
-  // ========================================
-  // LOADING
-  // ========================================
+  // ==========================================
+  // CONTINUE TO DEMO PAYMENT
+  // ==========================================
 
-  if (!vendor) {
+  const continueToPayment = () => {
+    if (loading) return;
+
+    const isLoggedIn = localStorage.getItem(VENDOR_SESSION_KEY) === "true";
+
+    if (!isLoggedIn) {
+      navigate("/vendor/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    const plan = MEMBERSHIP_PLANS.find((item) => item.id === selectedPlan);
+
+    if (!plan) {
+      alert("Please select a valid membership plan.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const savedVendor = JSON.parse(
+        localStorage.getItem(VENDOR_KEY) || "null",
+      );
+
+      // Save selected plan for the success page.
+      const pendingPlan = {
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        months: plan.months,
+        discount: plan.discount,
+        events: plan.events,
+
+        vendorId:
+          savedVendor?._id || savedVendor?.id || savedVendor?.vendorId || "",
+
+        vendorEmail: savedVendor?.email || savedVendor?.vendorEmail || "",
+
+        selectedAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem(PENDING_PLAN_KEY, JSON.stringify(pendingPlan));
+
+      // Demo flow: no actual payment gateway is connected.
+      navigate("/vendor/payment-success", {
+        state: {
+          demoPaymentConfirmed: true,
+        },
+      });
+    } catch (error) {
+      console.error("Unable to continue:", error);
+
+      alert("Something went wrong. Please try again.");
+
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // LOADING
+  // ==========================================
+
+  if (vendor === null) {
     return (
       <main className="vf-page">
-        <div className="vf-loading">
-          Loading membership plans...
-        </div>
+        <div className="vf-loading">Loading membership plans...</div>
       </main>
     );
   }
 
-  // ========================================
-  // UI
-  // ========================================
+  // ==========================================
+  // PAGE
+  // ==========================================
 
   return (
-    <main className="vf-page vf-content-page">
+    <main className="vf-page">
+      <section className="vf-membership-container">
+        {/* HEADER */}
 
-      {/* PAGE HEADING */}
+        <div className="vf-membership-header">
+          <span className="vf-eyebrow">STALLORA VENDOR MEMBERSHIP</span>
 
-      <div className="vf-page-heading vf-centered-heading">
-        <span className="vf-eyebrow">
-          VENDOR MEMBERSHIPS
-        </span>
+          <h1>
+            Choose Your
+            <span> Growth Plan</span>
+          </h1>
 
-        <h1>Unlock More Stall Opportunities</h1>
+          <p>
+            Unlock every available event and enjoy exclusive discounts on your
+            stall bookings.
+          </p>
 
-        <p>
-          Choose a membership plan to unlock all approved
-          events and receive discounts on eligible bookings.
-        </p>
-      </div>
-
-      {/* MEMBERSHIP CARDS */}
-
-      <div className="vf-plan-grid">
-
-        {PLANS.map((plan) => {
-          const Icon = plan.icon;
-
-          const isSelected = selectedPlan === plan.id;
-
-          return (
-            <article
-              key={plan.id}
-              className={`
-                vf-plan-card
-                ${plan.popular ? "is-popular" : ""}
-                ${isSelected ? "is-selected" : ""}
-              `}
-            >
-
-              {/* POPULAR LABEL */}
-
-              {plan.popular && (
-                <span className="vf-popular-label">
-                  MOST POPULAR
-                </span>
-              )}
-
-              {/* ICON */}
-
-              <div className="vf-plan-icon">
-                <Icon size={25} />
-              </div>
-
-              {/* PLAN NAME */}
-
-              <h2>{plan.name}</h2>
-
-              <p>{plan.description}</p>
-
-              {/* PRICE */}
-
-              <div className="vf-plan-price">
-                ₹{plan.price.toLocaleString("en-IN")}
-
-                <small>
-                  / {plan.months}{" "}
-                  {plan.months === 1 ? "month" : "months"}
-                </small>
-              </div>
-
-              {/* DISCOUNT */}
-
-              <div className="vf-discount-pill">
-                {plan.discount}% STALL DISCOUNT
-              </div>
-
-              {/* FEATURES */}
-
-              <ul>
-                {plan.features.map((feature, index) => (
-                  <li key={index}>
-                    <Check size={16} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* SELECT BUTTON */}
-
-              <button
-                type="button"
-                className={`vf-button ${
-                  isSelected
-                    ? "vf-button-primary"
-                    : "vf-button-outline"
-                }`}
-                onClick={() => setSelectedPlan(plan.id)}
-              >
-                {isSelected ? "Selected Plan" : "Choose Plan"}
-              </button>
-
-              {isSelected && (
-                <div className="vf-selected-indicator">
-                  <Check size={15} />
-                  Your selected membership
-                </div>
-              )}
-
-            </article>
-          );
-        })}
-
-      </div>
-
-      {/* PAYMENT SUMMARY */}
-
-      <div className="vf-payment-summary">
-
-        <div>
-          <strong>
-            Selected: {activePlan?.name}
-          </strong>
-
-          <span>
-            {activePlan?.discount}% discount ·{" "}
-            {activePlan?.months} month
-            {activePlan?.months === 1 ? "" : "s"} access
-          </span>
+          <div className="vf-membership-trust">
+            <ShieldCheck size={17} />
+            <span>Choose a plan that works for your business.</span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="vf-button vf-button-primary"
-          onClick={continueToPayment}
-        >
-          Continue — ₹
-          {activePlan?.price.toLocaleString("en-IN")}
+        {/* PLANS */}
 
-          <ArrowRight size={18} />
-        </button>
+        <div className="vf-plan-grid">
+          {MEMBERSHIP_PLANS.map((plan) => {
+            const Icon = plan.icon;
 
-      </div>
+            const isSelected = selectedPlan === plan.id;
 
-      {/* PAYMENT INFORMATION */}
+            return (
+              <article
+                key={plan.id}
+                className={`vf-plan-card ${
+                  isSelected ? "vf-plan-selected" : ""
+                } ${plan.popular ? "vf-plan-popular" : ""}`}
+              >
+                {/* POPULAR LABEL */}
 
-      <div className="vf-membership-security">
-        <ShieldCheck size={20} />
+                {plan.popular && (
+                  <div className="vf-popular-label">MOST POPULAR</div>
+                )}
 
-        <span>
-          Your selected membership will be associated
-          with your vendor account.
-        </span>
-      </div>
+                {/* PLAN ICON */}
 
-      {/* DEMO NOTE */}
+                <div className="vf-plan-icon">
+                  <Icon size={27} />
+                </div>
 
-      <p className="vf-demo-note">
-        Payment is currently simulated in this frontend
-        prototype. No money is charged. Connect Razorpay
-        checkout and verify payment on your backend before
-        activating live memberships.
-      </p>
+                {/* PLAN NAME */}
 
-      {/* BACK LINK */}
+                <h2>{plan.name}</h2>
 
-      <Link
-        className="vf-back-link"
-        to="/vendor/stalls"
-      >
-        ← Back to events
-      </Link>
+                <p className="vf-plan-description">{plan.description}</p>
 
+                {/* PRICE */}
+
+                <div className="vf-plan-price">
+                  <span>₹</span>
+                  {plan.price.toLocaleString("en-IN")}
+                </div>
+
+                <p className="vf-plan-duration">
+                  Valid for {plan.months}{" "}
+                  {plan.months === 1 ? "month" : "months"}
+                </p>
+
+                {/* DISCOUNT */}
+
+                <div className="vf-plan-discount">
+                  <strong>{plan.discount}% OFF</strong>
+
+                  <span>on stall bookings</span>
+                </div>
+
+                {/* FEATURES */}
+
+                <div className="vf-plan-features">
+                  {plan.features.map((feature, index) => (
+                    <div
+                      className="vf-plan-feature"
+                      key={`${plan.id}-${index}`}
+                    >
+                      <CheckCircle size={17} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* SELECT BUTTON */}
+
+                <button
+                  type="button"
+                  className={`vf-button ${
+                    isSelected ? "vf-button-primary" : "vf-button-outline"
+                  }`}
+                  onClick={() => handleSelectPlan(plan.id)}
+                >
+                  {isSelected ? (
+                    <>
+                      <CheckCircle size={17} />
+                      Selected
+                    </>
+                  ) : (
+                    <>
+                      Select Plan
+                      <ArrowRight size={17} />
+                    </>
+                  )}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* SELECTED PLAN SUMMARY */}
+
+        {selectedPlan && (
+          <div className="vf-selected-summary">
+            <div>
+              <span>Selected Membership</span>
+
+              <strong>
+                {
+                  MEMBERSHIP_PLANS.find((plan) => plan.id === selectedPlan)
+                    ?.name
+                }
+              </strong>
+            </div>
+
+            <div>
+              <span>Membership Price</span>
+
+              <strong>
+                ₹
+                {MEMBERSHIP_PLANS.find(
+                  (plan) => plan.id === selectedPlan,
+                )?.price.toLocaleString("en-IN")}
+              </strong>
+            </div>
+          </div>
+        )}
+
+        {/* PAY BUTTON */}
+
+        <div className="vf-membership-action">
+          <button
+            type="button"
+            className="vf-button vf-button-primary vf-pay-button"
+            onClick={continueToPayment}
+            disabled={loading || !selectedPlan}
+          >
+            {loading ? (
+              "Processing..."
+            ) : (
+              <>
+                Pay Now — ₹
+                {MEMBERSHIP_PLANS.find(
+                  (plan) => plan.id === selectedPlan,
+                )?.price.toLocaleString("en-IN")}
+                <ArrowRight size={19} />
+              </>
+            )}
+          </button>
+
+          <p className="vf-demo-note">
+            Demo mode: Clicking Pay Now activates the selected membership
+            without collecting a real payment.
+          </p>
+        </div>
+
+        {/* FOOTER LINK */}
+
+        <div className="vf-membership-footer">
+          <Link to="/events" className="vf-back-link">
+            ← Back to Events
+          </Link>
+
+          <Link to="/vendor/profile" className="vf-back-link">
+            View My Profile
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

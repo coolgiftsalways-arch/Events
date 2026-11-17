@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import {
   CalendarDays,
   MapPin,
@@ -7,24 +9,35 @@ import {
   Store,
   Lock,
   ArrowRight,
-  CheckCircle,
   Crown,
-  Ticket,
   AlertCircle,
 } from "lucide-react";
 
 import "../css/VendorFlow.css";
 
 const EVENTS_KEY = "stalloraOrganiserEvents";
+
 const BOOKINGS_KEY = "stalloraVendorBookings";
+
 const MEMBERSHIP_KEY = "stalloraVendorMembership";
+
+function getBookingMetadata() {
+  const timestamp = Date.now();
+
+  return {
+    id: `booking-${timestamp}`,
+    createdAt: new Date(timestamp).toISOString(),
+  };
+}
 
 function readStorage(key, fallback = null) {
   try {
     const value = localStorage.getItem(key);
+
     return value ? JSON.parse(value) : fallback;
   } catch (error) {
     console.error(`Unable to read ${key}:`, error);
+
     return fallback;
   }
 }
@@ -56,7 +69,9 @@ function formatDate(date) {
 
   return parsed.toLocaleDateString("en-IN", {
     day: "numeric",
+
     month: "short",
+
     year: "numeric",
   });
 }
@@ -74,34 +89,79 @@ function formatPrice(price) {
 export default function VendorStalls() {
   const navigate = useNavigate();
 
-  const [vendor, setVendor] = useState(null);
+  const [vendor] = useState(() => {
+    const session = localStorage.getItem("stalloraVendorSession") === "true";
+    return session ? readStorage("stalloraVendor", null) : null;
+  });
+
   const [events, setEvents] = useState([]);
+
   const [bookings, setBookings] = useState([]);
+
   const [membership, setMembership] = useState(getActiveMembership);
 
   const [message, setMessage] = useState("");
+
   const [messageType, setMessageType] = useState("success");
 
   // ==========================================
+
   // REFRESH APPROVED EVENTS
+
   // ==========================================
 
   const refreshEvents = () => {
     const savedEvents = readStorage(EVENTS_KEY, []);
 
-    const approvedEvents = Array.isArray(savedEvents)
-      ? savedEvents.filter((event) =>
-          ["published", "active"].includes(
-            String(event.status || "").toLowerCase(),
-          ),
-        )
-      : [];
+    // Accept published/approved events and pending events for this frontend demo.
+    // In production, pending events should be hidden until an admin approves them.
+    const eventList = Array.isArray(savedEvents)
+      ? savedEvents
+      : Array.isArray(savedEvents?.events)
+        ? savedEvents.events
+        : [];
+
+    const approvedEvents = eventList
+      .filter((event) => {
+        const statuses = [
+          event.status,
+          event.approvalStatus,
+          event.approval_status,
+          event.eventStatus,
+        ]
+          .map((value) =>
+            String(value || "")
+              .trim()
+              .toLowerCase(),
+          )
+          .filter(Boolean);
+
+        return (
+          statuses.length === 0 ||
+          statuses.some((status) =>
+            ["approved", "published", "active", "pending"].includes(status),
+          )
+        );
+      })
+      .map((event, index) => ({
+        ...event,
+        id: event.id || event._id || `organiser-event-${index}`,
+        title:
+          event.title || event.eventTitle || event.name || "Untitled Event",
+        date: event.date || event.startDate || event.eventDate || "",
+        venue: event.venue || event.location || "Venue not added",
+        city: event.city || event.eventCity || "",
+        coverImage: event.coverImage || event.image || event.bannerImage || "",
+        image: event.image || event.coverImage || event.bannerImage || "",
+      }));
 
     setEvents(approvedEvents);
   };
 
   // ==========================================
+
   // REFRESH BOOKINGS
+
   // ==========================================
 
   const refreshBookings = () => {
@@ -111,7 +171,9 @@ export default function VendorStalls() {
   };
 
   // ==========================================
+
   // REFRESH MEMBERSHIP
+
   // ==========================================
 
   const refreshMembership = () => {
@@ -119,23 +181,22 @@ export default function VendorStalls() {
   };
 
   // ==========================================
+
   // CHECK LOGIN AND LOAD DATA
+
   // ==========================================
 
   useEffect(() => {
-    const session = localStorage.getItem("stalloraVendorSession") === "true";
-
-    const savedVendor = readStorage("stalloraVendor", null);
-
-    if (!session || !savedVendor) {
+    if (!vendor) {
       navigate("/vendor/login", { replace: true });
+
       return;
     }
 
-    setVendor(savedVendor);
-
     refreshEvents();
+
     refreshBookings();
+
     refreshMembership();
 
     window.addEventListener("stallora:events-updated", refreshEvents);
@@ -144,11 +205,16 @@ export default function VendorStalls() {
 
     window.addEventListener(
       "stallora:vendor-bookings-updated",
+
       refreshBookings,
     );
 
     window.addEventListener("storage", refreshEvents);
+
     window.addEventListener("storage", refreshBookings);
+
+    window.addEventListener("storage", refreshMembership);
+    window.addEventListener("focus", refreshMembership);
 
     return () => {
       window.removeEventListener("stallora:events-updated", refreshEvents);
@@ -157,27 +223,38 @@ export default function VendorStalls() {
 
       window.removeEventListener(
         "stallora:vendor-bookings-updated",
+
         refreshBookings,
       );
 
       window.removeEventListener("storage", refreshEvents);
+
       window.removeEventListener("storage", refreshBookings);
+      window.removeEventListener("storage", refreshMembership);
+      window.removeEventListener("focus", refreshMembership);
+      window.removeEventListener("storage", refreshMembership);
+      window.removeEventListener("focus", refreshMembership);
     };
-  }, [navigate]);
+  }, [navigate, vendor]);
 
   // ==========================================
+
   // MEMBERSHIP ACCESS
+
   // ==========================================
 
   const hasMembership = Boolean(membership);
 
   // Only 3 events are visible without membership.
+
   const visibleEvents = hasMembership ? events : events.slice(0, 3);
 
   const lockedCount = hasMembership ? 0 : Math.max(events.length - 3, 0);
 
   // ==========================================
+
   // DISCOUNT LIMIT
+
   // ==========================================
 
   const discountedBookings = membership
@@ -193,16 +270,21 @@ export default function VendorStalls() {
   const discountRemaining = Math.max(0, discountLimit - discountedBookings);
 
   // ==========================================
+
   // ALREADY ENQUIRED EVENTS
+
   // ==========================================
 
   const bookedEventIds = useMemo(
     () => bookings.map((booking) => String(booking.eventId)),
+
     [bookings],
   );
 
   // ==========================================
+
   // EVENT ENQUIRY
+
   // ==========================================
 
   const handleBookEvent = (event) => {
@@ -212,6 +294,7 @@ export default function VendorStalls() {
 
     if (!session) {
       navigate("/vendor/login");
+
       return;
     }
 
@@ -225,6 +308,7 @@ export default function VendorStalls() {
       setMessage("You have already submitted an enquiry for this event.");
 
       setMessageType("error");
+
       return;
     }
 
@@ -236,8 +320,10 @@ export default function VendorStalls() {
 
     const finalPrice = Math.round(originalPrice * (1 - discount / 100));
 
+    const bookingMetadata = getBookingMetadata();
+
     const booking = {
-      id: `booking-${Date.now()}`,
+      ...bookingMetadata,
 
       eventId: event.id,
 
@@ -256,17 +342,18 @@ export default function VendorStalls() {
       category: event.category || "General",
 
       originalPrice,
+
       discount,
+
       finalPrice,
 
       membershipName: canApplyDiscount ? membership.name : null,
 
       vendorName: vendor.name || "",
+
       vendorEmail: vendor.email || "",
 
       status: "Enquiry saved (demo)",
-
-      createdAt: new Date().toISOString(),
     };
 
     try {
@@ -295,7 +382,9 @@ export default function VendorStalls() {
   };
 
   // ==========================================
+
   // LOADING
+
   // ==========================================
 
   if (!vendor) {
@@ -307,12 +396,14 @@ export default function VendorStalls() {
   }
 
   // ==========================================
+
   // MAIN UI
+
   // ==========================================
 
   return (
     <main className="vf-page vf-content-page">
-      {/* PAGE HEADING */}
+      {/* PAGE HEADING * */}
 
       <div className="vf-page-heading">
         <div>
@@ -329,7 +420,7 @@ export default function VendorStalls() {
         <div className="vf-welcome-chip">Welcome, {vendor.name}</div>
       </div>
 
-      {/* MEMBERSHIP BANNER */}
+      {/* MEMBERSHIP BANNER * */}
 
       <div className={`vf-access-banner ${hasMembership ? "is-unlocked" : ""}`}>
         <div>
@@ -361,7 +452,7 @@ export default function VendorStalls() {
         </Link>
       </div>
 
-      {/* FEEDBACK */}
+      {/* FEEDBACK * */}
 
       {message && (
         <div
@@ -374,7 +465,7 @@ export default function VendorStalls() {
         </div>
       )}
 
-      {/* EVENT TOOLBAR */}
+      {/* EVENT TOOLBAR * */}
 
       <div className="vf-event-toolbar">
         <div>
@@ -397,7 +488,7 @@ export default function VendorStalls() {
         </div>
       </div>
 
-      {/* EVENT CARDS */}
+      {/* EVENT CARDS * */}
 
       {visibleEvents.length > 0 ? (
         <div className="vf-stall-grid">
@@ -423,7 +514,7 @@ export default function VendorStalls() {
 
             return (
               <article className="vf-stall-card vf-event-card" key={event.id}>
-                {/* EVENT IMAGE */}
+                {/* EVENT IMAGE * */}
 
                 {image ? (
                   <img
@@ -437,6 +528,7 @@ export default function VendorStalls() {
                 ) : (
                   <div className="vf-event-placeholder">
                     <CalendarDays size={42} />
+
                     <span>STALLORA EVENT</span>
                   </div>
                 )}
@@ -453,16 +545,18 @@ export default function VendorStalls() {
                       "Discover this event and explore opportunities for your brand."}
                   </p>
 
-                  {/* EVENT DETAILS */}
+                  {/* EVENT DETAILS * */}
 
                   <div className="vf-event-details">
                     <span>
                       <CalendarDays size={15} />
+
                       {formatDate(event.date || event.startDate)}
                     </span>
 
                     <span>
                       <MapPin size={15} />
+
                       {event.location ||
                         [event.city, event.state].filter(Boolean).join(", ") ||
                         event.venue ||
@@ -485,7 +579,7 @@ export default function VendorStalls() {
                     </span>
                   </div>
 
-                  {/* PRICE */}
+                  {/* PRICE * */}
 
                   <div className="vf-stall-meta">
                     <span>Stall Price</span>
@@ -493,7 +587,7 @@ export default function VendorStalls() {
                     <strong>{formatPrice(price)}</strong>
                   </div>
 
-                  {/* MEMBERSHIP DISCOUNT */}
+                  {/* MEMBERSHIP DISCOUNT * */}
 
                   {hasMembership && (
                     <div className="vf-discount-price">
@@ -515,7 +609,7 @@ export default function VendorStalls() {
                     </div>
                   )}
 
-                  {/* ENQUIRY BUTTON */}
+                  {/* ENQUIRY BUTTON * */}
 
                   <button
                     type="button"
@@ -538,7 +632,7 @@ export default function VendorStalls() {
             );
           })}
 
-          {/* LOCKED EVENTS */}
+          {/* LOCKED EVENTS * */}
 
           {lockedCount > 0 && (
             <button
@@ -578,7 +672,7 @@ export default function VendorStalls() {
         </div>
       )}
 
-      {/* INFORMATION */}
+      {/* INFORMATION * */}
 
       <p className="vf-demo-note">
         Event information is loaded from Organiser-created events. Enquiries are

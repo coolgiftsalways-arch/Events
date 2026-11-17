@@ -1,169 +1,141 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  CheckCircle,
-  Crown,
-  CalendarDays,
-  ArrowRight,
-  UserRound,
-  ShieldCheck,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { CheckCircle, Crown, ArrowRight, UserRound } from "lucide-react";
 
 import "../css/VendorFlow.css";
 
+const VALID_PLANS = {
+  basic: {
+    months: 1,
+    discount: 10,
+    events: 2,
+    price: 999,
+    name: "Basic",
+  },
+  growth: {
+    months: 3,
+    discount: 20,
+    events: 5,
+    price: 1999,
+    name: "Growth",
+  },
+  premium: {
+    months: 12,
+    discount: 30,
+    events: 36,
+    price: 4999,
+    name: "Premium",
+  },
+};
+
 export default function VendorPaymentSuccess() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const activationStarted = useRef(false);
 
   const [activated, setActivated] = useState(false);
   const [plan, setPlan] = useState(null);
 
   useEffect(() => {
-    // ========================================
-    // CHECK VENDOR LOGIN
-    // ========================================
+    // Only allow access through the demo Pay Now flow.
+    if (!location.state?.demoPaymentConfirmed) {
+      navigate("/vendor/membership", { replace: true });
+      return;
+    }
 
-    const isLoggedIn =
-      localStorage.getItem("stalloraVendorSession") === "true";
+    if (activationStarted.current) return;
+    activationStarted.current = true;
+
+    // Check vendor login.
+    const isLoggedIn = localStorage.getItem("stalloraVendorSession") === "true";
 
     if (!isLoggedIn) {
       navigate("/vendor/login", { replace: true });
       return;
     }
 
-    // ========================================
-    // GET PENDING PLAN
-    // ========================================
-
     let pendingPlan = null;
 
     try {
       pendingPlan = JSON.parse(
-        localStorage.getItem("stalloraPendingVendorPlan") || "null"
+        localStorage.getItem("stalloraPendingVendorPlan") || "null",
       );
     } catch (error) {
-      console.error("Unable to read pending membership:", error);
+      console.error("Unable to read selected plan:", error);
     }
 
-    if (!pendingPlan) {
+    const selectedPlan = pendingPlan && VALID_PLANS[pendingPlan.id];
+
+    if (!selectedPlan) {
+      localStorage.removeItem("stalloraPendingVendorPlan");
       navigate("/vendor/membership", { replace: true });
       return;
     }
 
-    // ========================================
-    // CHECK EXISTING MEMBERSHIP
-    // ========================================
-
-    let existingMembership = null;
-
-    try {
-      existingMembership = JSON.parse(
-        localStorage.getItem("stalloraVendorMembership") || "null"
-      );
-    } catch (error) {
-      console.error("Unable to read existing membership:", error);
-    }
-
-    // ========================================
-    // CALCULATE MEMBERSHIP DATES
-    // ========================================
-
+    // Activate demo membership.
     const now = new Date();
 
     const expiryDate = new Date(now);
-
-    expiryDate.setMonth(
-      expiryDate.getMonth() + Number(pendingPlan.months)
-    );
-
-    // ========================================
-    // ACTIVATE MEMBERSHIP
-    // ========================================
-    // DEMO ONLY:
-    // Real activation must happen after verified
-    // Razorpay payment from the backend.
+    expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.months);
 
     const membership = {
-      ...pendingPlan,
-
+      ...selectedPlan,
+      planId: pendingPlan.id,
       status: "active",
-
       startedAt: now.toISOString(),
-
       expiresAt: expiryDate.toISOString(),
-
-      paymentMode: "frontend-demo",
-
+      paymentMode: "demo",
       paymentReference: `DEMO-${Date.now()}`,
-
       activatedAt: now.toISOString(),
     };
 
     try {
       localStorage.setItem(
         "stalloraVendorMembership",
-        JSON.stringify(membership)
+        JSON.stringify(membership),
       );
 
       localStorage.removeItem("stalloraPendingVendorPlan");
 
-      // Notify vendor pages to refresh membership status.
-      window.dispatchEvent(
-        new Event("stallora-vendor-updated")
-      );
+      window.dispatchEvent(new Event("stallora-vendor-updated"));
 
       setPlan(membership);
       setActivated(true);
     } catch (error) {
-      console.error("Unable to activate membership:", error);
+      console.error("Membership activation failed:", error);
+
+      activationStarted.current = false;
 
       navigate("/vendor/membership", { replace: true });
     }
-  }, [navigate]);
-
-  // ========================================
-  // LOADING
-  // ========================================
+  }, [navigate, location.state]);
 
   if (!activated || !plan) {
     return (
       <main className="vf-page">
-        <div className="vf-loading">
-          Preparing your membership...
-        </div>
+        <div className="vf-loading">Activating your membership...</div>
       </main>
     );
   }
 
-  // ========================================
-  // SUCCESS PAGE
-  // ========================================
-
   return (
     <main className="vf-page vf-success-page">
-
       <section className="vf-success-card">
-
-        {/* SUCCESS ICON */}
-
         <div className="vf-success-check">
           <CheckCircle size={48} />
         </div>
 
-        <span className="vf-eyebrow">
-          MEMBERSHIP ACTIVATED — DEMO
-        </span>
+        <span className="vf-eyebrow">DEMO MEMBERSHIP ACTIVATED</span>
 
         <h1>You're All Set!</h1>
 
         <p>
-          Your {plan.name} membership has been activated
-          in this browser prototype.
+          Your {plan.name} membership has been activated successfully in this
+          browser.
         </p>
 
-        {/* MEMBERSHIP DETAILS */}
-
         <div className="vf-success-details">
-
           <div>
             <span>Membership Plan</span>
             <strong>{plan.name}</strong>
@@ -171,10 +143,7 @@ export default function VendorPaymentSuccess() {
 
           <div>
             <span>Amount</span>
-
-            <strong>
-              ₹{Number(plan.price).toLocaleString("en-IN")}
-            </strong>
+            <strong>₹{Number(plan.price).toLocaleString("en-IN")}</strong>
           </div>
 
           <div>
@@ -184,82 +153,52 @@ export default function VendorPaymentSuccess() {
 
           <div>
             <span>Discounted Bookings</span>
-            <strong>
-              Up to {plan.events} events
-            </strong>
+            <strong>Up to {plan.events} events</strong>
           </div>
 
           <div>
             <span>Membership Duration</span>
             <strong>
-              {plan.months}{" "}
-              {Number(plan.months) === 1 ? "month" : "months"}
+              {plan.months} {plan.months === 1 ? "month" : "months"}
             </strong>
           </div>
 
           <div>
             <span>Membership Valid Until</span>
-
             <strong>
-              {new Date(plan.expiresAt).toLocaleDateString(
-                "en-IN",
-                {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                }
-              )}
+              {new Date(plan.expiresAt).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </strong>
           </div>
-
         </div>
-
-        {/* UNLOCKED MESSAGE */}
 
         <div className="vf-success-unlocked">
           <Crown size={21} />
 
           <div>
-            <strong>All approved events unlocked!</strong>
-
-            <span>
-              You can now explore all available events
-              on STALLORA.
-            </span>
+            <strong>All 63 Events Unlocked!</strong>
+            <span>You can now explore all available events on STALLORA.</span>
           </div>
         </div>
 
-        {/* EXPLORE EVENTS */}
-
-        <Link
-          to="/vendor/stalls"
-          className="vf-button vf-button-primary"
-        >
+        <Link to="/vendor/stalls" className="vf-button vf-button-primary">
           Explore All Events
           <ArrowRight size={18} />
         </Link>
 
-        {/* PROFILE */}
-
-        <Link
-          to="/vendor/profile"
-          className="vf-back-link"
-        >
+        <Link to="/vendor/profile" className="vf-back-link">
           <UserRound size={16} />
           View My Profile
         </Link>
 
-        {/* PAYMENT NOTE */}
-
         <p className="vf-demo-note">
-          This is a frontend payment simulation. No real
-          payment was collected. Connect Razorpay and verify
-          payment on your backend before activating live
-          memberships.
+          Demo mode: No real payment has been collected. Membership is activated
+          locally in this browser.
         </p>
-
       </section>
-
     </main>
   );
 }

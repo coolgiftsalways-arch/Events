@@ -2,59 +2,69 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../css/VendorFlow.css";
 
+const readStoredJSON = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "null");
+  } catch {
+    return null;
+  }
+};
+
+const getSavedVendor = () => {
+  const isLoggedIn = localStorage.getItem("stalloraVendorSession") === "true";
+  return isLoggedIn ? readStoredJSON("stalloraVendor") : null;
+};
+
+const getActiveMembership = () => {
+  const savedMembership = readStoredJSON("stalloraVendorMembership");
+
+  if (
+    savedMembership?.status === "active" &&
+    savedMembership.expiresAt &&
+    new Date(savedMembership.expiresAt).getTime() > Date.now()
+  ) {
+    return savedMembership;
+  }
+
+  return null;
+};
+
 export default function VendorProfile() {
   const navigate = useNavigate();
 
-  const [vendor, setVendor] = useState(null);
-  const [membership, setMembership] = useState(null);
+  const [vendor, setVendor] = useState(getSavedVendor);
+  const [membership, setMembership] = useState(getActiveMembership);
   const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(() => {
+    const savedVendor = getSavedVendor();
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
+    return {
+      name: savedVendor?.name || "",
+      phone: savedVendor?.phone || "",
+    };
   });
 
-  // ==========================================
-  // LOAD VENDOR PROFILE
-  // ==========================================
-
   useEffect(() => {
-    const savedVendor = JSON.parse(
-      localStorage.getItem("stalloraVendor") || "null",
-    );
-
-    const isLoggedIn = localStorage.getItem("stalloraVendorSession") === "true";
-
-    if (!isLoggedIn || !savedVendor) {
+    if (!getSavedVendor()) {
       navigate("/vendor/login", { replace: true });
-      return;
-    }
-
-    setVendor(savedVendor);
-
-    setForm({
-      name: savedVendor.name || "",
-      phone: savedVendor.phone || "",
-    });
-
-    // LOAD MEMBERSHIP
-
-    const savedMembership = JSON.parse(
-      localStorage.getItem("stalloraVendorMembership") || "null",
-    );
-
-    if (
-      savedMembership &&
-      savedMembership.status === "active" &&
-      new Date(savedMembership.expiresAt).getTime() > Date.now()
-    ) {
-      setMembership(savedMembership);
     }
   }, [navigate]);
 
-  // ==========================================
-  // SAVE PROFILE
-  // ==========================================
+  useEffect(() => {
+    const refreshMembership = () => {
+      setMembership(getActiveMembership());
+    };
+
+    window.addEventListener("storage", refreshMembership);
+    window.addEventListener("stallora-vendor-updated", refreshMembership);
+    window.addEventListener("focus", refreshMembership);
+
+    return () => {
+      window.removeEventListener("storage", refreshMembership);
+      window.removeEventListener("stallora-vendor-updated", refreshMembership);
+      window.removeEventListener("focus", refreshMembership);
+    };
+  }, []);
 
   const handleSave = (event) => {
     event.preventDefault();
@@ -66,16 +76,15 @@ export default function VendorProfile() {
     };
 
     localStorage.setItem("stalloraVendor", JSON.stringify(updatedVendor));
-
     setVendor(updatedVendor);
+    setForm({
+      name: updatedVendor.name,
+      phone: updatedVendor.phone,
+    });
     setEditing(false);
 
     window.dispatchEvent(new Event("stallora-vendor-updated"));
   };
-
-  // ==========================================
-  // LOADING
-  // ==========================================
 
   if (!vendor) {
     return (
@@ -85,20 +94,12 @@ export default function VendorProfile() {
     );
   }
 
-  // ==========================================
-  // PROFILE UI
-  // ==========================================
-
   return (
     <main className="vf-page vf-content-page vf-profile-page">
-      {/* PAGE HEADING */}
-
       <div className="vf-page-heading">
         <div>
           <span className="vf-eyebrow">YOUR ACCOUNT</span>
-
           <h1>Vendor Profile</h1>
-
           <p>Manage your account and membership details.</p>
         </div>
 
@@ -107,18 +108,13 @@ export default function VendorProfile() {
         </Link>
       </div>
 
-      {/* PROFILE LAYOUT */}
-
       <section className="vf-profile-layout">
-        {/* LEFT PROFILE CARD */}
-
         <div className="vf-profile-card">
           <div className="vf-profile-avatar">
             {vendor.name?.charAt(0)?.toUpperCase() || "V"}
           </div>
 
           <h2>{vendor.name}</h2>
-
           <p>{vendor.email}</p>
 
           <span className="vf-status-badge">
@@ -126,14 +122,13 @@ export default function VendorProfile() {
           </span>
 
           <button
+            type="button"
             className="vf-button vf-button-outline"
-            onClick={() => setEditing(!editing)}
+            onClick={() => setEditing((current) => !current)}
           >
             {editing ? "Cancel Editing" : "Edit Profile"}
           </button>
         </div>
-
-        {/* RIGHT PROFILE DETAILS */}
 
         <div className="vf-profile-details">
           <h2>Personal Information</h2>
@@ -146,10 +141,10 @@ export default function VendorProfile() {
                   type="text"
                   value={form.name}
                   onChange={(event) =>
-                    setForm({
-                      ...form,
+                    setForm((current) => ({
+                      ...current,
                       name: event.target.value,
-                    })
+                    }))
                   }
                   required
                 />
@@ -161,10 +156,10 @@ export default function VendorProfile() {
                   type="tel"
                   value={form.phone}
                   onChange={(event) =>
-                    setForm({
-                      ...form,
+                    setForm((current) => ({
+                      ...current,
                       phone: event.target.value,
-                    })
+                    }))
                   }
                 />
               </label>
@@ -200,8 +195,6 @@ export default function VendorProfile() {
               </div>
             </div>
           )}
-
-          {/* MEMBERSHIP INFORMATION */}
 
           <div className="vf-membership-box">
             <div>

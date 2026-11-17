@@ -207,7 +207,9 @@ const CreateEvent = () => {
         contactPhone: form.contactPhone.trim(),
         coverImage,
         image: coverImage,
-        status: "pending",
+        status: "published",
+        approvalStatus: "approved",
+        availabilityStatus: "Stalls Open",
         bookings: 0,
         createdAt: new Date().toISOString(),
         organiserId: organiser.id || organiser.email || "organiser",
@@ -223,7 +225,9 @@ const CreateEvent = () => {
 
       window.dispatchEvent(new Event("stallora:events-updated"));
 
-      setSuccess("Your event has been submitted successfully!");
+      setSuccess(
+        "Your event has been published successfully and is now visible to vendors!",
+      );
 
       setTimeout(() => {
         navigate("/organiser/dashboard");
