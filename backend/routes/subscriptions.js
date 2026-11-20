@@ -1,33 +1,13 @@
 const crypto = require("crypto");
 const router = require("express").Router();
-const Razorpay = require("razorpay");
 const Subscription = require("../models/Subscription");
+const { markBookingPaid } = require("../utils/bookingPayments");
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-// silver = monthly plan, gold = yearly plan (period is set on the Plan in Razorpay)
-const PLANS = {
-  silver: { planId: process.env.RAZORPAY_PLAN_SILVER, totalCount: 120 }, // up to 10 years of months
-  gold: { planId: process.env.RAZORPAY_PLAN_GOLD, totalCount: 10 },      // up to 10 years
-  // vendor plans
-  basic: { planId: process.env.RAZORPAY_PLAN_VENDOR_BASIC, totalCount: 120 },    // monthly
-  growth: { planId: process.env.RAZORPAY_PLAN_VENDOR_GROWTH, totalCount: 40 },   // every 3 months
-  premium: { planId: process.env.RAZORPAY_PLAN_VENDOR_PREMIUM, totalCount: 10 }, // yearly
-};
-
-// Organiser and vendor memberships are separate (same email can have one of each)
-const GROUP = { organiser: ["silver", "gold"], vendor: ["basic", "growth", "premium"] };
-const groupOf = (plan) => (GROUP.vendor.includes(plan) ? GROUP.vendor : GROUP.organiser);
+const { razorpay, PLANS, groupOf, syncSubscription } = require("../config/plans");
 
 // Copy Razorpay's view of a subscription into our DB
 async function sync(sub) {
-  const rz = await razorpay.subscriptions.fetch(sub.razorpaySubscriptionId);
-  sub.status = rz.status;
-  if (rz.current_end) sub.currentEnd = new Date(rz.current_end * 1000);
-  await sub.save();
+  await syncSubscription(sub);
   return sub;
 }
 
@@ -41,12 +21,27 @@ router.post("/", async (req, res) => {
   try {
     const { plan, name, email, phone } = req.body;
     const cfg = PLANS[plan];
-    if (!cfg?.planId) return res.status(400).json({ error: "Invalid plan" });
+    if (!cfg) return res.status(400).json({ error: "Invalid plan" });
+    if (!cfg.planId) {
+      const envName = { silver: "RAZORPAY_PLAN_SILVER", gold: "RAZORPAY_PLAN_GOLD" }[plan] || `RAZORPAY_PLAN_VENDOR_${plan.toUpperCase()}`;
+      console.error(`Plan "${plan}" has no Razorpay plan id: add ${envName}=plan_... to backend/.env`);
+      return res.status(503).json({ error: "This plan isn't available yet. Please try again later or contact support." });
+    }
     if (!email) return res.status(400).json({ error: "Email required" });
 
     // Already subscribed? Don't charge twice.
     const live = await Subscription.findOne({ email: String(email).toLowerCase(), plan: { $in: groupOf(plan) }, status: { $in: ["active", "authenticated"] } });
     if (live) return res.status(409).json({ error: "You already have an active plan", subscription: view(live) });
+
+    // Clicked "Continue" before but didn't pay? Reuse that link instead of making a new one.
+    const unpaid = await Subscription.findOne({
+      email: String(email).toLowerCase(),
+      plan,
+      razorpayPlanId: cfg.planId, // only if it's for the same Razorpay plan (price) as now
+      status: "created",
+      createdAt: { $gte: new Date(Date.now() - 24 * 3600 * 1000) },
+    }).sort({ createdAt: -1 });
+    if (unpaid) return res.status(200).json(view(unpaid));
 
     const rz = await razorpay.subscriptions.create({
       plan_id: cfg.planId,
@@ -57,6 +52,7 @@ router.post("/", async (req, res) => {
 
     const sub = await Subscription.create({
       email, name, phone, plan,
+      razorpayPlanId: cfg.planId,
       razorpaySubscriptionId: rz.id, shortUrl: rz.short_url, status: rz.status,
     });
     res.status(201).json(view(sub));
@@ -76,7 +72,7 @@ router.get("/:id/status", async (req, res) => {
 
 // GET /api/subscriptions/by-email/:email?role=vendor|organiser  (for dashboard "manage plan")
 router.get("/by-email/:email", async (req, res) => {
-  const plans = GROUP[req.query.role] || GROUP.organiser;
+  const plans = groupOf(req.query.role === "vendor" ? "basic" : "silver");
   const sub = await Subscription.findOne({ email: String(req.params.email).toLowerCase(), plan: { $in: plans } }).sort({ createdAt: -1 });
   if (!sub) return res.json(null);
   try { await sync(sub); } catch {}
@@ -93,7 +89,10 @@ router.post("/:id/cancel", async (req, res) => {
     const atCycleEnd = sub.status === "active"; // not started yet -> cancel immediately
     await razorpay.subscriptions.cancel(sub.razorpaySubscriptionId, atCycleEnd);
     await sync(sub);
-    if (atCycleEnd) sub.status = "cancel_scheduled", await sub.save();
+    if (atCycleEnd) sub.status = "cancel_scheduled";
+    sub.cancelledAt = new Date();
+    sub.cancelledBy = "customer";
+    await sub.save();
     res.json(view(sub));
   } catch (e) {
     res.status(400).json({ error: e.error?.description || "Could not cancel" });
@@ -108,6 +107,13 @@ router.post("/webhook", async (req, res) => {
     return res.status(400).send("bad signature");
 
   const event = JSON.parse(req.body.toString());
+
+  // Stall booking paid through a payment link
+  const link = event.payload?.payment_link?.entity;
+  if (event.event === "payment_link.paid" && link?.reference_id) {
+    await markBookingPaid(link.reference_id, event.payload?.payment?.entity?.id).catch(() => {});
+  }
+
   const rz = event.payload?.subscription?.entity;
   if (rz) {
     const sub = await Subscription.findOne({ razorpaySubscriptionId: rz.id });

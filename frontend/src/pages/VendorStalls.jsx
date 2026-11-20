@@ -13,22 +13,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import { apiFetch, isLoggedIn } from "../services/api";
 import "../css/VendorFlow.css";
 
-const EVENTS_KEY = "stalloraOrganiserEvents";
 
-const BOOKINGS_KEY = "stalloraVendorBookings";
 
 const MEMBERSHIP_KEY = "stalloraVendorMembership";
 
-function getBookingMetadata() {
-  const timestamp = Date.now();
-
-  return {
-    id: `booking-${timestamp}`,
-    createdAt: new Date(timestamp).toISOString(),
-  };
-}
 
 function readStorage(key, fallback = null) {
   try {
@@ -111,51 +102,19 @@ export default function VendorStalls() {
   // ==========================================
 
   const refreshEvents = () => {
-    const savedEvents = readStorage(EVENTS_KEY, []);
-
-    // Accept published/approved events and pending events for this frontend demo.
-    // In production, pending events should be hidden until an admin approves them.
-    const eventList = Array.isArray(savedEvents)
-      ? savedEvents
-      : Array.isArray(savedEvents?.events)
-        ? savedEvents.events
-        : [];
-
-    const approvedEvents = eventList
-      .filter((event) => {
-        const statuses = [
-          event.status,
-          event.approvalStatus,
-          event.approval_status,
-          event.eventStatus,
-        ]
-          .map((value) =>
-            String(value || "")
-              .trim()
-              .toLowerCase(),
-          )
-          .filter(Boolean);
-
-        return (
-          statuses.length === 0 ||
-          statuses.some((status) =>
-            ["approved", "published", "active", "pending"].includes(status),
-          )
-        );
-      })
-      .map((event, index) => ({
-        ...event,
-        id: event.id || event._id || `organiser-event-${index}`,
-        title:
-          event.title || event.eventTitle || event.name || "Untitled Event",
-        date: event.date || event.startDate || event.eventDate || "",
-        venue: event.venue || event.location || "Venue not added",
-        city: event.city || event.eventCity || "",
-        coverImage: event.coverImage || event.image || event.bannerImage || "",
-        image: event.image || event.coverImage || event.bannerImage || "",
-      }));
-
-    setEvents(approvedEvents);
+    apiFetch("/events")
+      .then((list) =>
+        setEvents(
+          (Array.isArray(list) ? list : []).map((event) => ({
+            ...event,
+            date: event.date || event.startDate || "",
+            venue: event.venue || event.location || "Venue not added",
+            coverImage: event.coverImage || event.image || "",
+            image: event.image || event.coverImage || "",
+          })),
+        ),
+      )
+      .catch((error) => console.error("Unable to load events:", error));
   };
 
   // ==========================================
@@ -165,9 +124,10 @@ export default function VendorStalls() {
   // ==========================================
 
   const refreshBookings = () => {
-    const savedBookings = readStorage(BOOKINGS_KEY, []);
-
-    setBookings(Array.isArray(savedBookings) ? savedBookings : []);
+    if (!isLoggedIn("vendor")) return;
+    apiFetch("/bookings/mine", { role: "vendor" })
+      .then((list) => setBookings(Array.isArray(list) ? list : []))
+      .catch((error) => console.error("Unable to load bookings:", error));
   };
 
   // ==========================================
@@ -287,7 +247,7 @@ export default function VendorStalls() {
 
   // ==========================================
 
-  const handleBookEvent = (event) => {
+  const handleBookEvent = async (event) => {
     setMessage("");
 
     const session = localStorage.getItem("stalloraVendorSession") === "true";
@@ -298,84 +258,35 @@ export default function VendorStalls() {
       return;
     }
 
-    const currentBookings = readStorage(BOOKINGS_KEY, []);
-
-    const alreadyBooked = currentBookings.some(
-      (booking) => String(booking.eventId) === String(event.id),
-    );
-
-    if (alreadyBooked) {
+    if (bookedEventIds.includes(String(event.id))) {
       setMessage("You have already submitted an enquiry for this event.");
-
       setMessageType("error");
-
       return;
     }
 
-    const originalPrice = Number(event.price) || 0;
-
-    const canApplyDiscount = hasMembership && discountRemaining > 0;
-
-    const discount = canApplyDiscount ? Number(membership.discount || 0) : 0;
-
-    const finalPrice = Math.round(originalPrice * (1 - discount / 100));
-
-    const bookingMetadata = getBookingMetadata();
-
-    const booking = {
-      ...bookingMetadata,
-
-      eventId: event.id,
-
-      eventTitle: event.title || event.name || "Untitled Event",
-
-      eventDate: event.date || event.startDate || "",
-
-      eventLocation:
-        event.location ||
-        [event.city, event.state].filter(Boolean).join(", ") ||
-        event.venue ||
-        "Location not added",
-
-      venue: event.venue || "",
-
-      category: event.category || "General",
-
-      originalPrice,
-
-      discount,
-
-      finalPrice,
-
-      membershipName: canApplyDiscount ? membership.name : null,
-
-      vendorName: vendor.name || "",
-
-      vendorEmail: vendor.email || "",
-
-      status: "Enquiry saved (demo)",
-    };
-
     try {
-      const updatedBookings = [...currentBookings, booking];
+      // The server applies your membership discount (if any is left)
+      const booking = await apiFetch("/bookings", {
+        method: "POST",
+        role: "vendor",
+        body: { kind: "enquiry", eventId: event.id },
+      });
 
-      localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updatedBookings));
-
-      setBookings(updatedBookings);
+      setBookings((previous) => [booking, ...previous]);
 
       window.dispatchEvent(new Event("stallora:vendor-bookings-updated"));
 
       setMessage(
-        discount > 0
-          ? `Your enquiry has been saved. ${discount}% membership discount applied.`
-          : "Your event enquiry has been saved successfully.",
+        booking.discount > 0
+          ? `Your enquiry has been sent. ${booking.discount}% membership discount applied.`
+          : "Your event enquiry has been sent to the organiser.",
       );
 
       setMessageType("success");
     } catch (error) {
       console.error("Unable to save event enquiry:", error);
 
-      setMessage("Unable to save your enquiry. Please try again.");
+      setMessage(error.message || "Unable to send your enquiry. Please try again.");
 
       setMessageType("error");
     }

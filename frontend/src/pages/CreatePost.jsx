@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import "../css/CreatePost.css";
+import { apiFetch, isLoggedIn } from "../services/api";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ const CreatePost = () => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setError("");
@@ -100,45 +101,19 @@ const CreatePost = () => {
       return;
     }
 
-    const organiser = JSON.parse(
-      localStorage.getItem("stalloraOrganiser") || "null",
-    );
-
-    if (!organiser) {
-      setError("Please complete organiser registration first.");
+    if (!isLoggedIn("organiser")) {
+      setError("Please log in as an organiser first.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const existingPosts = JSON.parse(
-        localStorage.getItem("stalloraOrganiserPosts") || "[]",
-      );
-
-      if (!Array.isArray(existingPosts)) {
-        throw new Error("Invalid posts data.");
-      }
-
-      const newPost = {
-        id: `post-${Date.now()}`,
-        mediaType,
-        mediaUrl: preview,
-        image: preview,
-        caption: caption.trim(),
-        likes: 0,
-        views: 0,
-        createdAt: new Date().toISOString(),
-        organiserId: organiser.id || organiser.email || "organiser",
-        organiserName: organiser.name || "Organiser",
-      };
-
-      const updatedPosts = [newPost, ...existingPosts];
-
-      localStorage.setItem(
-        "stalloraOrganiserPosts",
-        JSON.stringify(updatedPosts),
-      );
+      await apiFetch("/posts", {
+        method: "POST",
+        role: "organiser",
+        body: { mediaType, mediaUrl: preview, caption: caption.trim() },
+      });
 
       window.dispatchEvent(new Event("stallora:posts-updated"));
 
@@ -150,9 +125,7 @@ const CreatePost = () => {
     } catch (err) {
       console.error("Post publishing error:", err);
 
-      setError(
-        "Unable to publish your post. Storage may be full. Try a smaller file.",
-      );
+      setError(err.message || "Unable to publish your post. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { useEffect } from "react";
 import { API } from "../api";
+import QrPayCard from "./QrPayCard";
 
-// Shows QR + button for the Razorpay subscription page and waits until it's active.
+// Razorpay subscription (membership) payment: QR + button, waits until it's active.
 export default function SubscriptionPayment({ sub, plan, onPaid, onCancel }) {
-  const [checking, setChecking] = useState(false);
-
   const check = async () => {
     const res = await fetch(`${API}/subscriptions/${sub.id}/status`);
     const data = await res.json();
@@ -17,26 +15,19 @@ export default function SubscriptionPayment({ sub, plan, onPaid, onCancel }) {
     return () => clearInterval(id);
   }, [sub.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const price = `₹${plan.price.toLocaleString("en-IN")} / ${plan.period}`;
-
   return (
-    <div className="om-pay">
-      <h2>{plan.name} — {price}</h2>
-      <p>Scan with your phone camera to open the payment page and approve the AutoPay mandate. You'll be charged {price} automatically. Cancel anytime from your dashboard.</p>
-      <div className="om-pay-qr">
-        <QRCodeSVG value={sub.shortUrl} size={220} level="M" marginSize={2} />
-      </div>
-      <a className="om-primary-button" href={sub.shortUrl} target="_blank" rel="noreferrer">
-        Pay with Razorpay
-      </a>
-      <p>Waiting for payment… this page updates automatically.</p>
-      <div className="om-pay-links">
-        <button type="button" disabled={checking}
-          onClick={async () => { setChecking(true); try { await check(); } finally { setChecking(false); } }}>
-          {checking ? "Checking…" : "I've paid — check now"}
-        </button>
-        <button type="button" onClick={onCancel}>← Change plan</button>
-      </div>
-    </div>
+    <QrPayCard
+      eyebrow="MEMBERSHIP · AUTOPAY"
+      title={`${plan.name} membership`}
+      subtitle="Approve the AutoPay mandate once — renewals happen automatically. Cancel anytime from your profile."
+      amount={plan.price}
+      period={`/ ${plan.period}`}
+      url={sub.shortUrl}
+      onCheck={() => check().catch(() => {})}
+      onBack={onCancel}
+      backLabel="Change plan"
+      fileName={`stallora-${String(plan.name).toLowerCase()}-membership-qr`}
+      steps={["Scan the QR or tap Pay", "Approve AutoPay in your UPI app (or use a card)", "This page confirms automatically"]}
+    />
   );
 }

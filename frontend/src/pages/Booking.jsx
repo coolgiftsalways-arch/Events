@@ -10,7 +10,9 @@ import {
   Store,
 } from "lucide-react";
 
-import { events, eventDetails } from "../data/events";
+import useEvent from "../services/useEvent";
+import { apiFetch, isLoggedIn } from "../services/api";
+import PaymentLinkPanel from "../components/PaymentLinkPanel";
 import { useLanguage } from "../context/LanguageContext";
 import "../css/Booking.css";
 
@@ -362,8 +364,13 @@ export default function Booking() {
 
   const t = translations[language] || translations.en;
 
-  const event = events.find((item) => item.id === eventId);
-  const details = eventDetails[eventId];
+  const { event, details, loading } = useEvent(eventId);
+
+  // Razorpay step
+  const [pendingBooking, setPendingBooking] = useState(null);
+  const [paid, setPaid] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const [form, setForm] = useState(initialForm);
 
@@ -401,6 +408,16 @@ export default function Booking() {
   // ==========================================
   // EVENT NOT FOUND
   // ==========================================
+
+  if (loading) {
+    return (
+      <main className="booking-page">
+        <div className="booking-not-found">
+          <p>Loading…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!event || !details) {
     return (
@@ -483,8 +500,10 @@ export default function Booking() {
   // PAYMENT HANDLER
   // ==========================================
 
-  const handlePayment = (e) => {
+  const handlePayment = async (e) => {
     e.preventDefault();
+
+    if (submitting) return;
 
     if (!validateForm()) {
       window.scrollTo({
@@ -495,36 +514,74 @@ export default function Booking() {
       return;
     }
 
-    const bookingData = {
-      eventId,
-      eventName: event.title,
-      customer: form,
-      stall: selected,
-      stallPrice,
-      discount,
-      bookingFee: BOOKING_FEE,
-      totalAmount: total,
-      paymentOption,
-      amountToPayNow,
-      remainingAmount,
-      paymentStatus: "Pending",
-      bookingStatus: "Pending",
-      createdAt: new Date().toISOString(),
-    };
+    setSubmitting(true);
+    setSubmitError("");
 
-    sessionStorage.setItem(
-      "stallora-pending-booking",
-      JSON.stringify(bookingData),
-    );
-
-    console.log("STALLORA BOOKING:", bookingData);
-
-    alert(
-      `${t.success}\n\n${t.paymentOption}: ${
-        paymentOption === "full" ? t.full : t.advance
-      }\n${t.payNow}: ${formatPrice(amountToPayNow)}\n${t.remainingAlert}: ${formatPrice(remainingAmount)}\n\n${t.razorpay}`,
-    );
+    try {
+      // The server re-checks the stall and works out the price itself
+      const booking = await apiFetch("/bookings", {
+        method: "POST",
+        role: isLoggedIn("vendor") ? "vendor" : undefined,
+        body: {
+          kind: "booking",
+          eventId: event.id,
+          stallId: selected.id,
+          paymentOption,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          phone: form.phone,
+          email: form.email,
+          brandName: form.brandName,
+          category: form.category,
+          products: form.products,
+        },
+      });
+      setPendingBooking(booking);
+      // jump straight to the QR code (smooth scrolling can stop half-way)
+      requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  // ==========================================
+  // PAYMENT STEP / DONE
+  // ==========================================
+
+  if (paid) {
+    return (
+      <main className="booking-page">
+        <div className="pay-panel">
+          <div className="pay-panel-done">✓</div>
+          <h2>Stall booked!</h2>
+          <p>
+            Stall {pendingBooking?.stall?.id} at {event.title} is reserved for you. The organiser will contact you
+            with the next steps.
+          </p>
+          {pendingBooking?.remainingAmount > 0 && (
+            <p>Remaining to pay later: {formatPrice(pendingBooking.remainingAmount)}</p>
+          )}
+          <Link className="pay-panel-button" to={isLoggedIn("vendor") ? "/vendor/bookings" : "/vendors"}>
+            {isLoggedIn("vendor") ? "See my bookings" : "Explore more events"}
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (pendingBooking) {
+    return (
+      <main className="booking-page">
+        <PaymentLinkPanel
+          booking={pendingBooking}
+          onPaid={() => setPaid(true)}
+          onCancel={() => setPendingBooking(null)}
+        />
+      </main>
+    );
+  }
 
   // ==========================================
   // MAIN PAGE
@@ -900,12 +957,18 @@ export default function Booking() {
 
                 {/* PAYMENT BUTTON */}
 
+                {submitError && (
+                  <p className="booking-secure-note" role="alert" style={{ color: "#b4232c" }}>
+                    {submitError}
+                  </p>
+                )}
+
                 <button
                   type="submit"
                   className="booking-pay-button"
-                  disabled={!selected}
+                  disabled={!selected || submitting}
                 >
-                  {t.payButton} {formatPrice(amountToPayNow)}
+                  {submitting ? "Starting payment…" : `${t.payButton} ${formatPrice(amountToPayNow)}`}
                   <CreditCard size={18} />
                 </button>
 

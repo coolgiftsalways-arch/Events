@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Crown, ArrowRight, UserRound } from "lucide-react";
 
 import { API } from "../api";
+import { refreshSession } from "../services/api";
 import "../css/VendorFlow.css";
 
 const VALID_PLANS = {
@@ -102,6 +103,7 @@ export default function VendorPaymentSuccess() {
         localStorage.removeItem("stalloraPendingVendorPlan");
 
         window.dispatchEvent(new Event("stallora-vendor-updated"));
+        refreshSession("vendor"); // replace local copy with the server's membership
 
         setPlan(membership);
         setActivated(true);

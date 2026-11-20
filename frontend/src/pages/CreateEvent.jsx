@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { apiFetch, isLoggedIn } from "../services/api";
 import "../css/CreateEvent.css";
 
 const initialForm = {
@@ -153,7 +154,7 @@ const CreateEvent = () => {
     return "";
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setError("");
@@ -166,78 +167,46 @@ const CreateEvent = () => {
       return;
     }
 
-    const organiser = JSON.parse(
-      localStorage.getItem("stalloraOrganiser") || "null",
-    );
-
-    if (!organiser) {
-      setError("Please register as an organiser before creating an event.");
+    if (!isLoggedIn("organiser")) {
+      setError("Please log in as an organiser before creating an event.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const existingEvents = JSON.parse(
-        localStorage.getItem("stalloraOrganiserEvents") || "[]",
-      );
-
-      if (!Array.isArray(existingEvents)) {
-        throw new Error("Invalid events data.");
-      }
-
-      const newEvent = {
-        id: `event-${Date.now()}`,
-        title: form.title.trim(),
-        category: form.category,
-        description: form.description.trim(),
-        date: form.date,
-        startDate: form.date,
-        startTime: form.startTime,
-        endTime: form.endTime,
-        venue: form.venue.trim(),
-        location: `${form.city.trim()}, ${form.state.trim()}`,
-        address: form.address.trim(),
-        city: form.city.trim(),
-        state: form.state.trim(),
-        price: Number(form.price),
-        totalStalls: Number(form.totalStalls),
-        availableStalls: Number(form.totalStalls),
-        contactEmail: form.contactEmail.trim(),
-        contactPhone: form.contactPhone.trim(),
-        coverImage,
-        image: coverImage,
-        status: "published",
-        approvalStatus: "approved",
-        availabilityStatus: "Stalls Open",
-        bookings: 0,
-        createdAt: new Date().toISOString(),
-        organiserId: organiser.id || organiser.email || "organiser",
-        organiserName: organiser.name || "Organiser",
-      };
-
-      const updatedEvents = [newEvent, ...existingEvents];
-
-      localStorage.setItem(
-        "stalloraOrganiserEvents",
-        JSON.stringify(updatedEvents),
-      );
+      const result = await apiFetch("/events", {
+        method: "POST",
+        role: "organiser",
+        body: {
+          ...form,
+          title: form.title.trim(),
+          description: form.description.trim(),
+          venue: form.venue.trim(),
+          address: form.address.trim(),
+          city: form.city.trim(),
+          state: form.state.trim(),
+          contactEmail: form.contactEmail.trim(),
+          contactPhone: form.contactPhone.trim(),
+          coverImage,
+        },
+      });
 
       window.dispatchEvent(new Event("stallora:events-updated"));
 
       setSuccess(
-        "Your event has been published successfully and is now visible to vendors!",
+        result.needsApproval
+          ? "Your event has been submitted! It will be visible to vendors once it's approved (usually within a day)."
+          : "Your event has been published successfully and is now visible to vendors!",
       );
 
       setTimeout(() => {
         navigate("/organiser/dashboard");
-      }, 1200);
+      }, 1800);
     } catch (err) {
       console.error("Event creation error:", err);
 
-      setError(
-        "Unable to save your event. Browser storage may be full. Try a smaller image.",
-      );
+      setError(err.message || "Unable to save your event. Please try again.");
     } finally {
       setLoading(false);
     }

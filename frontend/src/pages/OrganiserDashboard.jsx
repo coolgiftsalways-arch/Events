@@ -29,11 +29,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+import { apiFetch, isLoggedIn } from "../services/api";
+import ManageSubscription from "../components/ManageSubscription";
 import "../css/OrganiserDashboard.css";
 
 const PROFILE_KEY = "stalloraOrganiser";
-const POSTS_KEY = "stalloraOrganiserPosts";
-const EVENTS_KEY = "stalloraOrganiserEvents";
 
 // ==========================================
 // STORAGE HELPERS
@@ -89,13 +89,9 @@ export default function OrganiserDashboard() {
     readStorage(PROFILE_KEY)
   );
 
-  const [posts, setPosts] = useState(() =>
-    readStorage(POSTS_KEY, [])
-  );
+  const [posts, setPosts] = useState([]);
 
-  const [events, setEvents] = useState(() =>
-    readStorage(EVENTS_KEY, [])
-  );
+  const [events, setEvents] = useState([]);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPost, setSelectedPost] = useState(null);
@@ -107,8 +103,21 @@ export default function OrganiserDashboard() {
   useEffect(() => {
     const refreshData = () => {
       setProfile(readStorage(PROFILE_KEY));
-      setPosts(readStorage(POSTS_KEY, []));
-      setEvents(readStorage(EVENTS_KEY, []));
+      if (!isLoggedIn("organiser")) return;
+      apiFetch("/posts/mine", { role: "organiser" })
+        .then(setPosts)
+        .catch((error) => console.error("Unable to load posts:", error));
+      apiFetch("/events/mine", { role: "organiser" })
+        .then((list) =>
+          // "published" once you approve it in the admin panel
+          setEvents(
+            list.map((event) => ({
+              ...event,
+              status: event.approvalStatus === "approved" ? "published" : event.approvalStatus,
+            }))
+          )
+        )
+        .catch((error) => console.error("Unable to load events:", error));
     };
 
     refreshData();
@@ -270,7 +279,7 @@ export default function OrganiserDashboard() {
   // DELETE POST
   // ==========================================
 
-  const deletePost = (postId) => {
+  const deletePost = async (postId) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this post?"
     );
@@ -282,10 +291,7 @@ export default function OrganiserDashboard() {
     );
 
     try {
-      localStorage.setItem(
-        POSTS_KEY,
-        JSON.stringify(updatedPosts)
-      );
+      await apiFetch(`/posts/${postId}`, { role: "organiser", method: "DELETE" });
 
       setPosts(updatedPosts);
       setSelectedPost(null);
@@ -589,6 +595,9 @@ export default function OrganiserDashboard() {
 
                 </div>
               )}
+
+              {/* RAZORPAY SUBSCRIPTION (renewal date + cancel) */}
+              {membershipStatus === "active" && <ManageSubscription email={profile.email} role="organiser" />}
 
               {/* STATISTICS */}
 

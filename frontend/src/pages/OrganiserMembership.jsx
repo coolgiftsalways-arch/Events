@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import SubscriptionPayment from "../components/SubscriptionPayment";
+import { isLoggedIn, refreshSession } from "../services/api";
 import { API } from "../api";
 import "../css/OrganiserMembership.css";
 
@@ -92,20 +93,18 @@ function saveStorage(key, value) {
 
 export default function OrganiserMembership() {
   // Read registration details created by OrganiserRegister.jsx
-  const pendingOrganiser = readStorage("stalloraPendingOrganiser");
+  // (or the logged-in organiser's profile when they come back later)
+  const loggedIn = isLoggedIn("organiser");
+  const pendingOrganiser = loggedIn
+    ? readStorage("stalloraPendingOrganiser") || readStorage("stalloraOrganiser")
+    : null;
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState(null);
 
   // Do not display another registration form.
   // Redirect users who have not registered.
-  if (
-    !pendingOrganiser ||
-    !pendingOrganiser.name ||
-    !pendingOrganiser.company ||
-    !pendingOrganiser.email ||
-    !pendingOrganiser.phone
-  ) {
-    return <Navigate to="/organiser/register" replace />;
+  if (!pendingOrganiser || !pendingOrganiser.name || !pendingOrganiser.email) {
+    return <Navigate to={loggedIn ? "/organiser/login" : "/organiser/register"} replace />;
   }
 
   // ==========================================
@@ -161,7 +160,7 @@ export default function OrganiserMembership() {
 
         username:
           existingProfile?.username ||
-          pendingOrganiser.company
+          (pendingOrganiser.company || pendingOrganiser.name)
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "")
             .slice(0, 20),
@@ -242,7 +241,7 @@ export default function OrganiserMembership() {
     }
   };
 
-  const onPaid = (sub) => {
+  const onPaid = async (sub) => {
     const profile = readStorage("stalloraOrganiser") || {};
     saveStorage("stalloraOrganiser", {
       ...profile,
@@ -253,6 +252,7 @@ export default function OrganiserMembership() {
     });
     localStorage.removeItem("stalloraPendingOrganiser");
     window.dispatchEvent(new Event("stallora:organiser-updated"));
+    await refreshSession("organiser"); // membership now comes from the server
     navigate("/organiser/dashboard");
   };
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import "../css/Navbar.css";
+import { logout } from "../services/api";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export default function Navbar() {
   // LOGOUT
   const handleLogout = () => {
     if (accountType === "vendor") {
-      localStorage.removeItem("stalloraVendorSession");
+      logout("vendor");
 
       setVendor(null);
       setVendorMembership(null);
@@ -154,11 +155,11 @@ export default function Navbar() {
     }
 
     if (accountType === "organiser") {
-      localStorage.removeItem("stalloraOrganiser");
+      logout("organiser");
       setOrganiser(null);
 
       closeMenu();
-      navigate("/organiser/register");
+      navigate("/organiser/login");
       return;
     }
 

@@ -13,10 +13,24 @@ const app = express();
 app.use(cors({ origin: process.env.CLIENT_URL || true }));
 // Webhook needs the raw body for signature check, so mount it before express.json()
 app.use("/api/subscriptions/webhook", express.raw({ type: "application/json" }));
-app.use(express.json());
+app.use(express.json({ limit: "12mb" })); // room for images sent from the browser
 
 app.get("/api/health", (req, res) => res.json({ ok: true, db: mongoose.connection.readyState === 1 }));
 app.use("/api/subscriptions", require("./routes/subscriptions"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/events", require("./routes/events"));
+app.use("/api/bookings", require("./routes/bookings"));
+app.use("/api/posts", require("./routes/posts"));
+
+// Any error inside a route -> clean JSON message instead of a crash page
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err.type === "entity.too.large") return res.status(413).json({ error: "File too large. Please use a smaller image." });
+  if (err.status && err.status < 500) return res.status(err.status).json({ error: err.message });
+  console.error(err);
+  res.status(500).json({ error: "Something went wrong. Please try again." });
+});
 
 
 

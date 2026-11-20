@@ -10,7 +10,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-import { events, eventDetails } from "../data/events";
+import useEvent from "../services/useEvent";
 import { useLanguage } from "../context/LanguageContext";
 
 import "../css/EventDetails.css";
@@ -131,9 +131,7 @@ export default function EventDetails() {
 
   const t = translations[language] || translations.en;
 
-  const event = events.find((item) => item.id === eventId);
-
-  const details = eventDetails[eventId];
+  const { event, details, loading } = useEvent(eventId);
 
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1000&q=85";
@@ -146,6 +144,16 @@ export default function EventDetails() {
   // ==========================================
   // EVENT NOT FOUND
   // ==========================================
+
+  if (loading) {
+    return (
+      <main className="event-detail-page">
+        <div className="event-not-found">
+          <p>Loading event…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!event) {
     return (

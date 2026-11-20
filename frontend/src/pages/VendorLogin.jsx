@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { login } from "../services/api";
+import PasswordInput from "../components/PasswordInput";
 import "../css/VendorFlow.css";
 
 export default function VendorLogin() {
@@ -11,6 +13,7 @@ export default function VendorLogin() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     setForm({
@@ -19,33 +22,17 @@ export default function VendorLogin() {
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
-
+    setLoading(true);
     try {
-      const savedVendor = JSON.parse(
-        localStorage.getItem("stalloraVendor") || "null",
-      );
-
-      if (
-        !savedVendor ||
-        savedVendor.email.toLowerCase() !== form.email.trim().toLowerCase() ||
-        savedVendor.password !== form.password
-      ) {
-        setError(
-          "Email or password is incorrect. Please register if you are new.",
-        );
-        return;
-      }
-
-      localStorage.setItem("stalloraVendorSession", "true");
-
-      window.dispatchEvent(new Event("stallora-vendor-updated"));
-
+      await login("vendor", form.email.trim().toLowerCase(), form.password);
       navigate("/vendor/stalls");
-    } catch {
-      setError("We couldn't sign you in. Please try again.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,9 +88,8 @@ export default function VendorLogin() {
 
           <label>
             Password
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               autoComplete="current-password"
               placeholder="Enter your password"
               value={form.password}
@@ -118,7 +104,7 @@ export default function VendorLogin() {
             </div>
           )}
 
-          <button className="vf-button vf-button-primary" type="submit">
+          <button className="vf-button vf-button-primary" type="submit" disabled={loading}>
             Login to your account
           </button>
         </form>
@@ -132,7 +118,7 @@ export default function VendorLogin() {
         </Link>
 
         <p className="vf-demo-note">
-          Frontend prototype: account details are stored in this browser only.
+          Your account is saved securely, so you can log in from any device.
         </p>
       </section>
     </main>

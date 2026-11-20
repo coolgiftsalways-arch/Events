@@ -22,13 +22,13 @@ import {
 } from "lucide-react";
 
 import "../css/OrganiserProfile.css";
+import { apiFetch, isLoggedIn, updateProfile } from "../services/api";
 
 // ==========================================
 // STORAGE KEYS
 // ==========================================
 
 const PROFILE_KEY = "stalloraOrganiser";
-const POSTS_KEY = "stalloraOrganiserPosts";
 
 // ==========================================
 // DEFAULT PROFILE
@@ -75,27 +75,19 @@ function getSavedProfile() {
 // READ ORGANISER POSTS
 // ==========================================
 
-function getSavedPosts() {
-  try {
-    const saved = localStorage.getItem(POSTS_KEY);
-
-    return saved ? JSON.parse(saved) : [];
-  } catch (error) {
-    console.error("Unable to load organiser posts:", error);
-    return [];
-  }
-}
+// Posts now come from the server (see useEffect below)
 
 // ==========================================
 // SAVE PROFILE
 // ==========================================
 
-function saveOrganiserProfile(updatedProfile) {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(updatedProfile));
+const PROFILE_FIELDS = ["name", "company", "phone", "username", "bio", "about", "location", "website", "instagram", "facebook", "profileImage"];
 
-  window.dispatchEvent(new Event("stallora:organiser-updated"));
-
-  return updatedProfile;
+// Saves to the server; the server copy is cached back into localStorage
+async function saveOrganiserProfile(updatedProfile) {
+  const changes = Object.fromEntries(PROFILE_FIELDS.filter((k) => updatedProfile[k] !== undefined).map((k) => [k, updatedProfile[k]]));
+  const saved = await updateProfile("organiser", changes);
+  return { ...emptyProfile, ...saved };
 }
 
 // ==========================================
@@ -123,7 +115,7 @@ export default function OrganiserProfile() {
   const [profile, setProfile] = useState(getSavedProfile);
 
   // POSTS
-  const [posts, setPosts] = useState(getSavedPosts);
+  const [posts, setPosts] = useState([]);
 
   // EDIT MODAL
   const [editing, setEditing] = useState(false);
@@ -146,7 +138,6 @@ export default function OrganiserProfile() {
       const updatedProfile = getSavedProfile();
 
       setProfile(updatedProfile);
-      setPosts(getSavedPosts());
 
       if (updatedProfile) {
         setForm(updatedProfile);
@@ -154,6 +145,12 @@ export default function OrganiserProfile() {
     };
 
     window.addEventListener("stallora:organiser-updated", refreshData);
+
+    if (isLoggedIn("organiser")) {
+      apiFetch("/posts/mine", { role: "organiser" })
+        .then(setPosts)
+        .catch((error) => console.error("Unable to load posts:", error));
+    }
 
     window.addEventListener("storage", refreshData);
 
@@ -265,7 +262,7 @@ export default function OrganiserProfile() {
 
     const reader = new FileReader();
 
-    reader.onload = () => {
+    reader.onload = async () => {
       const imageData = reader.result;
 
       if (typeof imageData !== "string") {
@@ -288,16 +285,16 @@ export default function OrganiserProfile() {
             updatedAt: new Date().toISOString(),
           };
 
-          saveOrganiserProfile(updatedProfile);
+          const saved = await saveOrganiserProfile(updatedProfile);
 
-          setProfile(updatedProfile);
-          setForm(updatedProfile);
+          setProfile(saved);
+          setForm(saved);
 
           setMessage("Profile picture updated successfully.");
         } catch (error) {
           console.error("Image save error:", error);
 
-          setMessage("Unable to save image. Please choose a smaller image.");
+          setMessage(error.message || "Unable to save image. Please choose a smaller image.");
         }
       } else {
         setMessage("Image preview updated. Save your profile to apply it.");
@@ -318,7 +315,7 @@ export default function OrganiserProfile() {
   // SAVE PROFILE
   // ==========================================
 
-  const saveProfile = (e) => {
+  const saveProfile = async (e) => {
     e.preventDefault();
 
     if (!form.name.trim()) {
@@ -352,10 +349,10 @@ export default function OrganiserProfile() {
     };
 
     try {
-      saveOrganiserProfile(updatedProfile);
+      const saved = await saveOrganiserProfile(updatedProfile);
 
-      setProfile(updatedProfile);
-      setForm(updatedProfile);
+      setProfile(saved);
+      setForm(saved);
 
       setEditing(false);
 
@@ -363,7 +360,7 @@ export default function OrganiserProfile() {
     } catch (error) {
       console.error("Profile save error:", error);
 
-      setMessage("Unable to save profile. Please use a smaller image.");
+      setMessage(error.message || "Unable to save profile. Please try again.");
     }
   };
 

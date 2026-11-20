@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { register } from "../services/api";
 import "../css/OrganiserAuth.css";
 
 // ==========================================
@@ -121,7 +122,7 @@ export default function OrganiserRegister() {
   // SUBMIT REGISTRATION
   // ==========================================
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (loading) return;
@@ -140,59 +141,30 @@ export default function OrganiserRegister() {
     try {
       const cleanEmail = form.email.trim().toLowerCase();
 
-      // Check for an existing organiser profile.
-      let existingProfile = null;
-
-      try {
-        const savedProfile = localStorage.getItem(
-          "stalloraOrganiser",
-        );
-
-        existingProfile = savedProfile
-          ? JSON.parse(savedProfile)
-          : null;
-      } catch {
-        existingProfile = null;
-      }
-
-      // Do not overwrite an existing organiser account
-      // when registering again in the same browser.
-      const organiserData = {
-        ...(existingProfile || {}),
-
+      // Create the organiser account (password is stored securely on the server)
+      await register("organiser", {
         name: form.name.trim(),
         company: form.company.trim(),
         email: cleanEmail,
         phone: form.phone,
+        password: form.password,
+      });
 
-        role: "organiser",
-        registrationCompleted: true,
-        registrationUpdatedAt: new Date().toISOString(),
-      };
-
-      // Store only the details required for the next step.
-      // Never store the password or confirm password.
-      const pendingOrganiser = {
-        name: organiserData.name,
-        company: organiserData.company,
-        email: organiserData.email,
-        phone: organiserData.phone,
-      };
-
+      // Details for the membership step
       localStorage.setItem(
         "stalloraPendingOrganiser",
-        JSON.stringify(pendingOrganiser),
+        JSON.stringify({
+          name: form.name.trim(),
+          company: form.company.trim(),
+          email: cleanEmail,
+          phone: form.phone,
+        }),
       );
 
-      // Continue to membership selection.
       navigate("/organiser/membership");
-
     } catch (err) {
       console.error("Organiser registration error:", err);
-
-      setError(
-        "Unable to save your registration details. Please try again.",
-      );
+      setError(err.message || "Unable to create your account. Please try again.");
     } finally {
       setLoading(false);
     }

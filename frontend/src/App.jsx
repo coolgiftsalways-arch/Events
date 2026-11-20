@@ -35,6 +35,7 @@ import Booking from "./pages/Booking";
 
 import OrganiserMembership from "./pages/OrganiserMembership";
 import OrganiserRegister from "./pages/OrganiserRegister";
+import OrganiserLogin from "./pages/OrganiserLogin";
 import OrganiserProfile from "./pages/OrganiserProfile";
 import OrganiserDashboard from "./pages/OrganiserDashboard";
 import CreateEvent from "./pages/CreateEvent";
@@ -62,6 +63,11 @@ import VendorBookings from "./pages/VendorBookings";
 // ==========================================
 // GLOBAL CSS
 // ==========================================
+
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminPanel from "./pages/admin/AdminPanel";
+
+import { isLoggedIn, refreshSession, clearSession } from "./services/api";
 
 import "./App.css";
 
@@ -135,10 +141,39 @@ function NotFound() {
 // APP LAYOUT
 // ==========================================
 
+// Keep the cached profile/membership fresh, and clear logins from the old
+// browser-only version (they have no server token).
+function SyncSessions() {
+  useEffect(() => {
+    try {
+      if (!isLoggedIn("vendor") && localStorage.getItem("stalloraVendorSession")) clearSession("vendor");
+      if (!isLoggedIn("organiser") && localStorage.getItem("stalloraOrganiser")) clearSession("organiser");
+    } catch {
+      /* storage blocked */
+    }
+    refreshSession("vendor");
+    refreshSession("organiser");
+  }, []);
+  return null;
+}
+
 function AppLayout() {
+  const { pathname } = useLocation();
+
+  // Admin panel has its own layout (no site navbar/footer)
+  if (pathname.startsWith("/admin")) {
+    return (
+      <Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/*" element={<AdminPanel />} />
+      </Routes>
+    );
+  }
+
   return (
     <div className="app">
       <SmoothScroll />
+      <SyncSessions />
 
       {/* GLOBAL NAVBAR */}
 
@@ -243,10 +278,7 @@ function AppLayout() {
           element={<Navigate to="/vendor/login" replace />}
         />
 
-        <Route
-          path="/organiser/login"
-          element={<Navigate to="/organiser/register" replace />}
-        />
+        <Route path="/organiser/login" element={<OrganiserLogin />} />
 
         {/* =====================================
             404 PAGE

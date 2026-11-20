@@ -8,9 +8,22 @@ import {
   AlertCircle,
   Store,
 } from "lucide-react";
+import { apiFetch, isLoggedIn } from "../services/api";
 import "../css/VendorFlow.css";
 
-const BOOKINGS_KEY = "stalloraVendorBookings";
+// What each status means to the vendor
+const STATUS_TEXT = {
+  pending: "Waiting for organiser",
+  approved: "Approved",
+  rejected: "Not accepted",
+  cancelled: "Cancelled",
+};
+
+const statusText = (b) => {
+  if (b.kind === "booking" && b.paymentStatus === "awaiting") return "Payment not completed";
+  if (b.kind === "booking" && b.paymentStatus === "paid" && b.status === "pending") return "Paid · stall reserved";
+  return STATUS_TEXT[b.status] || b.status;
+};
 
 const readStoredJSON = (key, fallback) => {
   try {
@@ -23,14 +36,7 @@ const readStoredJSON = (key, fallback) => {
 };
 
 const getSavedVendor = () => {
-  const isLoggedIn = localStorage.getItem("stalloraVendorSession") === "true";
-
-  return isLoggedIn ? readStoredJSON("stalloraVendor", null) : null;
-};
-
-const readBookings = () => {
-  const saved = readStoredJSON(BOOKINGS_KEY, []);
-  return Array.isArray(saved) ? saved : [];
+  return isLoggedIn("vendor") ? readStoredJSON("stalloraVendor", null) : null;
 };
 
 function formatDate(date) {
@@ -61,7 +67,8 @@ export default function VendorBookings() {
   const navigate = useNavigate();
 
   const [vendor] = useState(getSavedVendor);
-  const [bookings, setBookings] = useState(readBookings);
+  const [bookings, setBookings] = useState([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!getSavedVendor()) {
@@ -71,8 +78,14 @@ export default function VendorBookings() {
 
   useEffect(() => {
     const refreshBookings = () => {
-      setBookings(readBookings());
+      if (!isLoggedIn("vendor")) return;
+      apiFetch("/bookings/mine", { role: "vendor" })
+        .then((list) => setBookings(Array.isArray(list) ? list : []))
+        .catch((error) => console.error("Unable to load bookings:", error))
+        .finally(() => setLoaded(true));
     };
+
+    refreshBookings();
 
     window.addEventListener(
       "stallora:vendor-bookings-updated",
@@ -143,10 +156,7 @@ export default function VendorBookings() {
 
       {bookings.length > 0 ? (
         <div className="vf-bookings-list">
-          {bookings
-            .slice()
-            .reverse()
-            .map((booking, index) => (
+          {bookings.map((booking, index) => (
               <article
                 className="vf-booking-card"
                 key={booking.id || `${booking.createdAt || "booking"}-${index}`}
@@ -157,7 +167,9 @@ export default function VendorBookings() {
                   </div>
 
                   <div className="vf-booking-title">
-                    <span className="vf-eyebrow">EVENT ENQUIRY</span>
+                    <span className="vf-eyebrow">
+                      {booking.kind === "booking" ? `STALL ${booking.stall?.id || ""} BOOKING` : "EVENT ENQUIRY"}
+                    </span>
                     <h2>
                       {booking.eventTitle ||
                         booking.stallName ||
@@ -167,7 +179,7 @@ export default function VendorBookings() {
                   </div>
 
                   <span className="vf-booking-status">
-                    {booking.status || "Enquiry saved (demo)"}
+                    {statusText(booking)}
                   </span>
                 </div>
 
@@ -229,16 +241,43 @@ export default function VendorBookings() {
                   </div>
                 )}
 
-                <div className="vf-booking-note">
-                  <AlertCircle size={17} />
-                  <span>
-                    This is a saved enquiry, not a confirmed stall reservation.
-                    The organiser must confirm availability and booking details.
-                  </span>
-                </div>
+                {booking.kind === "booking" && booking.paymentStatus === "paid" && (
+                  <div className="vf-booking-membership">
+                    <span>Paid:</span>
+                    <strong>
+                      {formatPrice(booking.amountPaid)}
+                      {booking.remainingAmount > 0 && ` · ${formatPrice(booking.remainingAmount)} due later`}
+                    </strong>
+                  </div>
+                )}
+
+                {booking.paymentUrl && (
+                  <a className="vf-button vf-button-primary" href={booking.paymentUrl} target="_blank" rel="noreferrer">
+                    Complete payment
+                  </a>
+                )}
+
+                {booking.note && (
+                  <div className="vf-booking-membership">
+                    <span>Organiser note:</span>
+                    <strong>{booking.note}</strong>
+                  </div>
+                )}
+
+                {booking.kind !== "booking" && booking.status === "pending" && (
+                  <div className="vf-booking-note">
+                    <AlertCircle size={17} />
+                    <span>
+                      This is an enquiry, not a confirmed stall reservation.
+                      The organiser will confirm availability and contact you.
+                    </span>
+                  </div>
+                )}
               </article>
             ))}
         </div>
+      ) : !loaded ? (
+        <div className="vf-loading">Loading your bookings...</div>
       ) : (
         <div className="vf-empty-events">
           <div>
@@ -257,12 +296,6 @@ export default function VendorBookings() {
           </Link>
         </div>
       )}
-
-      <p className="vf-demo-note">
-        Booking enquiries are currently stored in your browser using
-        localStorage. Actual reservations, organiser approval and payment
-        processing require backend integration.
-      </p>
 
       <Link to="/vendor/profile" className="vf-back-link">
         ← Back to vendor profile

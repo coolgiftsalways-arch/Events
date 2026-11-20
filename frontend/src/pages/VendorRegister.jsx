@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { register } from "../services/api";
+import PasswordInput from "../components/PasswordInput";
 import "../css/VendorFlow.css";
 
 export default function VendorRegister() {
@@ -14,6 +16,7 @@ export default function VendorRegister() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     setForm({
@@ -22,7 +25,7 @@ export default function VendorRegister() {
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
 
@@ -36,31 +39,20 @@ export default function VendorRegister() {
       return;
     }
 
-    const existing = JSON.parse(
-      localStorage.getItem("stalloraVendor") || "null",
-    );
-
-    if (existing?.email?.toLowerCase() === form.email.trim().toLowerCase()) {
-      setError("An account with this email already exists. Please log in.");
-      return;
+    setLoading(true);
+    try {
+      await register("vendor", {
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        password: form.password,
+      });
+      navigate("/vendor/stalls");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const vendor = {
-      id: `vendor_${Date.now()}`,
-      name: form.name.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim(),
-      password: form.password,
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem("stalloraVendor", JSON.stringify(vendor));
-
-    localStorage.setItem("stalloraVendorSession", "true");
-
-    window.dispatchEvent(new Event("stallora-vendor-updated"));
-
-    navigate("/vendor/stalls");
   };
 
   return (
@@ -139,9 +131,8 @@ export default function VendorRegister() {
           <div className="vf-form-row">
             <label>
               Password
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 value={form.password}
                 onChange={handleChange}
                 placeholder="At least 6 characters"
@@ -152,9 +143,8 @@ export default function VendorRegister() {
 
             <label>
               Confirm password
-              <input
+              <PasswordInput
                 name="confirmPassword"
-                type="password"
                 value={form.confirmPassword}
                 onChange={handleChange}
                 placeholder="Repeat password"
@@ -170,7 +160,7 @@ export default function VendorRegister() {
             </div>
           )}
 
-          <button className="vf-button vf-button-primary" type="submit">
+          <button className="vf-button vf-button-primary" type="submit" disabled={loading}>
             Create account
           </button>
         </form>

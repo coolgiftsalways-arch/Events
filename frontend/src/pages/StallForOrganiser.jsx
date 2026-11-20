@@ -22,10 +22,9 @@ import {
 } from "lucide-react";
 
 import "../css/StallForOrganiser.css";
+import { apiFetch, isLoggedIn } from "../services/api";
 
 const ORGANISER_KEY = "stalloraOrganiser";
-const EVENTS_KEY = "stalloraOrganiserEvents";
-const APPLICATIONS_KEY = "stalloraApplications";
 
 const ITEMS_PER_PAGE = 52;
 
@@ -101,70 +100,6 @@ function hasPaidMembership(organiser) {
 }
 
 /* =========================================
-   DEMO APPLICATION GENERATOR
-========================================= */
-
-function createDemoApplications() {
-  const names = [
-    "Aarav Sharma",
-    "Priya Patel",
-    "Rahul Mehta",
-    "Sneha Shah",
-    "Aditya Verma",
-    "Neha Joshi",
-    "Rohan Gupta",
-    "Ananya Singh",
-    "Karan Desai",
-    "Isha Kapoor",
-    "Vikram Rao",
-    "Meera Nair",
-  ];
-
-  const businesses = [
-    "Urban Crafts",
-    "The Food Studio",
-    "Handmade Heaven",
-    "Sweet Treats",
-    "Style Street",
-    "Artisan Corner",
-    "The Coffee Spot",
-    "Creative Threads",
-    "Desi Delights",
-    "The Gift House",
-    "Urban Bites",
-    "The Fashion Hub",
-  ];
-
-  const categories = [
-    "Food & Beverages",
-    "Fashion",
-    "Handmade Products",
-    "Art & Crafts",
-    "Accessories",
-    "Lifestyle",
-  ];
-
-  return Array.from({ length: 52 }, (_, index) => ({
-    id: `demo-application-${index + 1}`,
-    _id: `demo-application-${index + 1}`,
-    vendorName: names[index % names.length],
-    name: names[index % names.length],
-    businessName: businesses[index % businesses.length],
-    category: categories[index % categories.length],
-    email: `vendor${index + 1}@example.com`,
-    phone: `98765${String(10000 + index).slice(-5)}`,
-    eventName: `STALLORA Event ${Math.floor(index / 10) + 1}`,
-    stallType: "Standard Stall",
-    stallSize: "10 x 10",
-    amount: 5000 + index * 100,
-    status: "pending",
-    appliedAt: new Date().toISOString(),
-    description: "This is a sample vendor application for dashboard preview.",
-    isDemo: true,
-  }));
-}
-
-/* =========================================
    APPLICATION NORMALIZATION
 ========================================= */
 
@@ -202,11 +137,10 @@ export default function StallForOrganiser() {
     readStorage(ORGANISER_KEY, null),
   );
 
-  const [events, setEvents] = useState(() => readStorage(EVENTS_KEY, []));
+  const [events, setEvents] = useState([]);
 
-  const [applications, setApplications] = useState(() =>
-    readStorage(APPLICATIONS_KEY, []),
-  );
+  // Vendor requests for this organiser's events (from the server)
+  const [applications, setApplications] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -222,8 +156,11 @@ export default function StallForOrganiser() {
 
   const refreshData = () => {
     setOrganiser(readStorage(ORGANISER_KEY, null));
-    setEvents(readStorage(EVENTS_KEY, []));
-    setApplications(readStorage(APPLICATIONS_KEY, []));
+    if (!isLoggedIn("organiser")) return Promise.resolve();
+    return Promise.all([
+      apiFetch("/events/mine", { role: "organiser" }).then(setEvents),
+      apiFetch("/bookings/organiser", { role: "organiser" }).then(setApplications),
+    ]).catch((error) => console.error("Unable to load applications:", error));
   };
 
   useEffect(() => {
@@ -233,7 +170,7 @@ export default function StallForOrganiser() {
 
     window.addEventListener("storage", handleStorage);
 
-    const interval = setInterval(refreshData, 2000);
+    const interval = setInterval(refreshData, 30000);
 
     return () => {
       window.removeEventListener("storage", handleStorage);
@@ -256,9 +193,7 @@ export default function StallForOrganiser() {
       ? applications.map(normalizeApplication)
       : [];
 
-    const demoApplications = createDemoApplications();
-
-    return [...realApplications, ...demoApplications];
+    return realApplications;
   }, [applications]);
 
   /* =========================================
@@ -318,7 +253,18 @@ export default function StallForOrganiser() {
      APPLICATION STATUS UPDATE
   ========================================= */
 
-  const updateApplicationStatus = (applicationId, newStatus) => {
+  const updateApplicationStatus = async (applicationId, newStatus) => {
+    try {
+      await apiFetch(`/bookings/${applicationId}`, {
+        role: "organiser",
+        method: "PATCH",
+        body: { status: newStatus },
+      });
+    } catch (error) {
+      window.alert(error.message);
+      return;
+    }
+
     const updatedApplications = applications.map((application) => {
       const matches =
         String(application.id) === String(applicationId) ||
@@ -334,8 +280,6 @@ export default function StallForOrganiser() {
     });
 
     setApplications(updatedApplications);
-
-    localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(updatedApplications));
 
     setSelectedApplication((previous) => {
       if (!previous) return previous;
@@ -358,11 +302,7 @@ export default function StallForOrganiser() {
   const handleRefresh = () => {
     setRefreshing(true);
 
-    refreshData();
-
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 700);
+    Promise.resolve(refreshData()).finally(() => setRefreshing(false));
   };
 
   /* =========================================

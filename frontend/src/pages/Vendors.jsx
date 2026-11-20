@@ -16,14 +16,13 @@ import {
 
 import { useLanguage } from "../context/LanguageContext";
 
-import { events as staticEvents } from "../data/events";
+import { apiFetch } from "../services/api";
 
 import "../css/Vendors.css";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1000&q=85";
 
-const EVENTS_KEY = "stalloraOrganiserEvents";
 
 const MEMBERSHIP_KEY = "stalloraVendorMembership";
 
@@ -97,72 +96,10 @@ function normalizeEvent(event, index = 0) {
 
 // ==========================================
 
-function readOrganiserEvents() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(EVENTS_KEY) || "[]");
-
-    if (!Array.isArray(saved)) return [];
-
-    return saved
-
-      .filter((event) => {
-        const statuses = [
-          event.status,
-
-          event.approvalStatus,
-
-          event.approval_status,
-
-          event.eventStatus,
-        ]
-
-          .map(normalizeText)
-
-          .filter(Boolean);
-
-        if (statuses.length === 0) return true;
-
-        return statuses.some((status) =>
-          ["approved", "published", "active", "pending"].includes(status),
-        );
-      })
-
-      .map((event, index) => normalizeEvent(event, index));
-  } catch (error) {
-    console.error("Unable to load organiser events:", error);
-
-    return [];
-  }
-}
-
-// ==========================================
-
-// COMBINE STATIC + ORGANISER EVENTS
-
-// ==========================================
-
-function readAllEvents() {
-  const staticList = Array.isArray(staticEvents)
-    ? staticEvents.map((event, index) => normalizeEvent(event, index))
-    : [];
-
-  const organiserList = readOrganiserEvents();
-
-  const eventMap = new Map();
-
-  staticList.forEach((event) => {
-    eventMap.set(String(event.id), event);
-  });
-
-  organiserList.forEach((event) => {
-    eventMap.set(String(event.id), event);
-  });
-
-  const allEvents = Array.from(eventMap.values());
-
-  console.log("STALLORA Total Events:", allEvents.length);
-
-  return allEvents;
+// Approved events from the server (organiser events + demo events you seeded)
+async function fetchAllEvents() {
+  const list = await apiFetch("/events");
+  return Array.isArray(list) ? list.map((event, index) => normalizeEvent(event, index)) : [];
 }
 
 // ==========================================
@@ -183,14 +120,7 @@ function readActiveMembership() {
 
     const expiryTime = new Date(saved.expiresAt).getTime();
 
-    const validPaymentMode = ["frontend-demo", "demo"].includes(
-      saved.paymentMode,
-    );
-
-    const isValid =
-      Number.isFinite(expiryTime) &&
-      expiryTime > Date.now() &&
-      validPaymentMode;
+    const isValid = Number.isFinite(expiryTime) && expiryTime > Date.now();
 
     return isValid ? saved : null;
   } catch (error) {
@@ -256,7 +186,7 @@ export default function Vendors() {
 
   // ==========================================
 
-  const [events, setEvents] = useState(() => readAllEvents());
+  const [events, setEvents] = useState([]);
 
   // ==========================================
 
@@ -266,8 +196,12 @@ export default function Vendors() {
 
   useEffect(() => {
     const refreshEvents = () => {
-      setEvents(readAllEvents());
+      fetchAllEvents()
+        .then(setEvents)
+        .catch((error) => console.error("Unable to load events:", error));
     };
+
+    refreshEvents();
 
     const refreshMembership = () => {
       setMembership(readActiveMembership());

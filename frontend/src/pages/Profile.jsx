@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { isLoggedIn, updateProfile } from "../services/api";
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -95,7 +96,7 @@ const Profile = () => {
   };
 
   // Save profile
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       setMessage("Please enter your name.");
       return;
@@ -107,7 +108,19 @@ const Profile = () => {
     }
 
     try {
-      const keys = ["stalloraOrganiser", "stalloraUser", "user"];
+      // Logged-in organiser/vendor: save to the server account
+      const role = isLoggedIn("organiser") ? "organiser" : isLoggedIn("vendor") ? "vendor" : null;
+      if (role) {
+        await updateProfile(role, {
+          name: formData.name,
+          phone: formData.phone,
+          company: formData.businessName,
+          bio: formData.bio,
+          profileImage: formData.avatar,
+        });
+      }
+
+      const keys = role ? [] : ["stalloraUser", "user"];
 
       let savedSomething = false;
 
@@ -136,7 +149,7 @@ const Profile = () => {
       });
 
       // Create a user entry if none exists
-      if (!savedSomething) {
+      if (!savedSomething && !role) {
         localStorage.setItem(
           "stalloraUser",
           JSON.stringify({
@@ -157,7 +170,7 @@ const Profile = () => {
       }, 3000);
     } catch (error) {
       console.error("Error saving profile:", error);
-      setMessage("Unable to save profile. Your browser storage may be full.");
+      setMessage(error.message || "Unable to save profile. Please try again.");
     }
   };
 
