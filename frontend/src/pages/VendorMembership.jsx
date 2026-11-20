@@ -10,6 +10,8 @@ import {
   Star,
 } from "lucide-react";
 
+import SubscriptionPayment from "../components/SubscriptionPayment";
+import { API } from "../api";
 import "../css/VendorFlow.css";
 
 // ==========================================
@@ -86,9 +88,21 @@ const PENDING_PLAN_KEY = "stalloraPendingVendorPlan";
 export default function VendorMembership() {
   const navigate = useNavigate();
 
-  const [selectedPlan, setSelectedPlan] = useState("growth");
+  // Remember the plan the vendor picked last (or their current membership)
+  const [selectedPlan, setSelectedPlan] = useState(() => {
+    try {
+      const saved =
+        JSON.parse(localStorage.getItem("stalloraVendorSelectedPlan") || "null") ||
+        JSON.parse(localStorage.getItem("stalloraVendorMembership") || "null")?.planId;
+      return MEMBERSHIP_PLANS.some((p) => p.id === saved) ? saved : "growth";
+    } catch {
+      return "growth";
+    }
+  });
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [subscription, setSubscription] = useState(null);
+  const [error, setError] = useState("");
 
   // ==========================================
   // CHECK VENDOR LOGIN
@@ -123,13 +137,18 @@ export default function VendorMembership() {
 
   const handleSelectPlan = (planId) => {
     setSelectedPlan(planId);
+    try {
+      localStorage.setItem("stalloraVendorSelectedPlan", JSON.stringify(planId));
+    } catch {
+      /* ignore */
+    }
   };
 
   // ==========================================
-  // CONTINUE TO DEMO PAYMENT
+  // CONTINUE TO RAZORPAY PAYMENT
   // ==========================================
 
-  const continueToPayment = () => {
+  const continueToPayment = async () => {
     if (loading) return;
 
     const isLoggedIn = localStorage.getItem(VENDOR_SESSION_KEY) === "true";
@@ -150,6 +169,7 @@ export default function VendorMembership() {
     }
 
     setLoading(true);
+    setError("");
 
     try {
       const savedVendor = JSON.parse(
@@ -173,22 +193,55 @@ export default function VendorMembership() {
         selectedAt: new Date().toISOString(),
       };
 
-      localStorage.setItem(PENDING_PLAN_KEY, JSON.stringify(pendingPlan));
+      if (!pendingPlan.vendorEmail) throw new Error("Your vendor account has no email. Please log in again.");
 
-      // Demo flow: no actual payment gateway is connected.
-      navigate("/vendor/payment-success", {
-        state: {
-          demoPaymentConfirmed: true,
-        },
+      // Create a Razorpay subscription for this plan
+      const res = await fetch(`${API}/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: plan.id,
+          name: savedVendor?.name || "",
+          email: pendingPlan.vendorEmail,
+          phone: savedVendor?.phone || "",
+        }),
       });
-    } catch (error) {
-      console.error("Unable to continue:", error);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not start payment");
 
-      alert("Something went wrong. Please try again.");
-
+      localStorage.setItem(
+        PENDING_PLAN_KEY,
+        JSON.stringify({ ...pendingPlan, subscriptionId: data.id }),
+      );
+      setSubscription(data);
+    } catch (err) {
+      console.error("Unable to continue:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
+
+  // Razorpay confirmed the payment -> success page activates the membership
+  const onPaid = () => {
+    navigate("/vendor/payment-success", { state: { paymentConfirmed: true } });
+  };
+
+  if (subscription) {
+    const plan = MEMBERSHIP_PLANS.find((item) => item.id === selectedPlan);
+    const period =
+      plan.months === 1 ? "month" : plan.months === 12 ? "year" : `${plan.months} months`;
+    return (
+      <main className="vf-page vf-content-page">
+        <SubscriptionPayment
+          sub={subscription}
+          plan={{ ...plan, period }}
+          onPaid={onPaid}
+          onCancel={() => setSubscription(null)}
+        />
+      </main>
+    );
+  }
 
   // ==========================================
   // LOADING
@@ -373,9 +426,9 @@ export default function VendorMembership() {
             )}
           </button>
 
-          <p className="vf-demo-note">
-            Demo mode: Clicking Pay Now activates the selected membership
-            without collecting a real payment.
+          <p className="vf-demo-note" role={error ? "alert" : undefined} style={error ? { color: "#c0392b" } : undefined}>
+            {error ||
+              "Secure payment via Razorpay. Renews automatically — cancel anytime from your profile."}
           </p>
         </div>
 

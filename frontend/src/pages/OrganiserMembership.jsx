@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import {
   ArrowRight,
@@ -12,6 +12,8 @@ import {
   Star,
 } from "lucide-react";
 
+import SubscriptionPayment from "../components/SubscriptionPayment";
+import { API } from "../api";
 import "../css/OrganiserMembership.css";
 
 // ==========================================
@@ -23,6 +25,7 @@ const plans = [
     id: "silver",
     name: "Silver",
     price: 1999,
+    period: "month",
     description: "Everything you need to get your event started.",
     icon: Star,
     features: [
@@ -40,6 +43,7 @@ const plans = [
     id: "gold",
     name: "Gold",
     price: 9999,
+    period: "year",
     description: "A complete toolkit for growing event organisers.",
     icon: Crown,
     popular: true,
@@ -89,6 +93,8 @@ function saveStorage(key, value) {
 export default function OrganiserMembership() {
   // Read registration details created by OrganiserRegister.jsx
   const pendingOrganiser = readStorage("stalloraPendingOrganiser");
+  const navigate = useNavigate();
+  const [subscription, setSubscription] = useState(null);
 
   // Do not display another registration form.
   // Redirect users who have not registered.
@@ -126,7 +132,7 @@ export default function OrganiserMembership() {
   // SAVE ORGANISER PROFILE
   // ==========================================
 
-  const continueWithPlan = () => {
+  const continueWithPlan = async () => {
     if (isSaving) return;
 
     setMessage("");
@@ -212,25 +218,58 @@ export default function OrganiserMembership() {
         return;
       }
 
-      // Clear temporary registration details
-      localStorage.removeItem("stalloraPendingOrganiser");
+      // Start a Razorpay subscription for this plan
+      const res = await fetch(`${API}/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selected.id,
+          name: pendingOrganiser.name,
+          email: pendingOrganiser.email,
+          phone: pendingOrganiser.phone,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
 
-      // Notify other components
-      window.dispatchEvent(new Event("stallora:organiser-updated"));
-
-      setMessageType("success");
-
-      setMessage(
-        `${selected.name} membership selected successfully! Your profile has been saved. Payment is still pending.`,
-      );
+      setSubscription(data);
     } catch (error) {
       console.error("Membership save error:", error);
 
-      setMessage("Something went wrong. Please try again.");
+      setMessage(error.message || "Something went wrong. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
+
+  const onPaid = (sub) => {
+    const profile = readStorage("stalloraOrganiser") || {};
+    saveStorage("stalloraOrganiser", {
+      ...profile,
+      membershipStatus: "active",
+      paymentVerified: true,
+      subscriptionId: sub.id,
+      updatedAt: new Date().toISOString(),
+    });
+    localStorage.removeItem("stalloraPendingOrganiser");
+    window.dispatchEvent(new Event("stallora:organiser-updated"));
+    navigate("/organiser/dashboard");
+  };
+
+  if (subscription) {
+    return (
+      <main className="om-page">
+        <div className="om-container">
+          <SubscriptionPayment
+            sub={subscription}
+            plan={selected}
+            onPaid={onPaid}
+            onCancel={() => setSubscription(null)}
+          />
+        </div>
+      </main>
+    );
+  }
 
   // ==========================================
   // PAGE UI
@@ -364,7 +403,7 @@ export default function OrganiserMembership() {
                     {plan.price.toLocaleString("en-IN")}
                   </div>
 
-                  <div className="om-plan-period">PER YEAR</div>
+                  <div className="om-plan-period">PER {plan.period.toUpperCase()}</div>
 
                   <div className="om-plan-divider" />
 
@@ -421,7 +460,7 @@ export default function OrganiserMembership() {
 
               <span>
                 Selected: {selected.name} — ₹
-                {selected.price.toLocaleString("en-IN")} / year
+                {selected.price.toLocaleString("en-IN")} / {selected.period}
               </span>
             </div>
 

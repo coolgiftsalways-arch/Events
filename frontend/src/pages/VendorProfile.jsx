@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ManageSubscription from "../components/ManageSubscription";
 import "../css/VendorFlow.css";
 
 const readStoredJSON = (key) => {
@@ -227,6 +228,9 @@ export default function VendorProfile() {
               {membership ? "Explore Stalls" : "View Plans"}
             </Link>
           </div>
+
+          {/* Razorpay subscription status + cancel */}
+          <ManageSubscription email={vendor.email} role="vendor" />
         </div>
       </section>
     </main>

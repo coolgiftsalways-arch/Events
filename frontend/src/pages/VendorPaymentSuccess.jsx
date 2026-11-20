@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Crown, ArrowRight, UserRound } from "lucide-react";
 
+import { API } from "../api";
 import "../css/VendorFlow.css";
 
 const VALID_PLANS = {
@@ -38,8 +39,8 @@ export default function VendorPaymentSuccess() {
   const [plan, setPlan] = useState(null);
 
   useEffect(() => {
-    // Only allow access through the demo Pay Now flow.
-    if (!location.state?.demoPaymentConfirmed) {
+    // Only allow access after the Razorpay payment screen confirmed payment.
+    if (!location.state?.paymentConfirmed) {
       navigate("/vendor/membership", { replace: true });
       return;
     }
@@ -73,42 +74,56 @@ export default function VendorPaymentSuccess() {
       return;
     }
 
-    // Activate demo membership.
-    const now = new Date();
+    // Double-check with the backend that Razorpay really has this subscription paid
+    const activate = (sub) => {
+      const now = new Date();
 
-    const expiryDate = new Date(now);
-    expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.months);
+      const expiryDate = new Date(now);
+      expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.months);
 
-    const membership = {
-      ...selectedPlan,
-      planId: pendingPlan.id,
-      status: "active",
-      startedAt: now.toISOString(),
-      expiresAt: expiryDate.toISOString(),
-      paymentMode: "demo",
-      paymentReference: `DEMO-${Date.now()}`,
-      activatedAt: now.toISOString(),
+      const membership = {
+        ...selectedPlan,
+        planId: pendingPlan.id,
+        status: "active",
+        startedAt: now.toISOString(),
+        expiresAt: sub.currentEnd || expiryDate.toISOString(),
+        paymentMode: "razorpay-subscription",
+        paymentReference: sub.id,
+        subscriptionStatus: sub.status,
+        activatedAt: now.toISOString(),
+      };
+
+      try {
+        localStorage.setItem(
+          "stalloraVendorMembership",
+          JSON.stringify(membership),
+        );
+
+        localStorage.removeItem("stalloraPendingVendorPlan");
+
+        window.dispatchEvent(new Event("stallora-vendor-updated"));
+
+        setPlan(membership);
+        setActivated(true);
+      } catch (error) {
+        console.error("Membership activation failed:", error);
+
+        activationStarted.current = false;
+
+        navigate("/vendor/membership", { replace: true });
+      }
     };
 
-    try {
-      localStorage.setItem(
-        "stalloraVendorMembership",
-        JSON.stringify(membership),
-      );
-
-      localStorage.removeItem("stalloraPendingVendorPlan");
-
-      window.dispatchEvent(new Event("stallora-vendor-updated"));
-
-      setPlan(membership);
-      setActivated(true);
-    } catch (error) {
-      console.error("Membership activation failed:", error);
-
-      activationStarted.current = false;
-
-      navigate("/vendor/membership", { replace: true });
-    }
+    fetch(`${API}/subscriptions/${encodeURIComponent(pendingPlan.subscriptionId || "")}/status`)
+      .then((r) => r.json())
+      .then((sub) => {
+        if (["active", "authenticated"].includes(sub.status)) activate(sub);
+        else navigate("/vendor/membership", { replace: true });
+      })
+      .catch(() => {
+        activationStarted.current = false;
+        navigate("/vendor/membership", { replace: true });
+      });
   }, [navigate, location.state]);
 
   if (!activated || !plan) {
@@ -126,13 +141,12 @@ export default function VendorPaymentSuccess() {
           <CheckCircle size={48} />
         </div>
 
-        <span className="vf-eyebrow">DEMO MEMBERSHIP ACTIVATED</span>
+        <span className="vf-eyebrow">MEMBERSHIP ACTIVATED</span>
 
         <h1>You're All Set!</h1>
 
         <p>
-          Your {plan.name} membership has been activated successfully in this
-          browser.
+          Your {plan.name} membership is now active.
         </p>
 
         <div className="vf-success-details">
@@ -195,8 +209,8 @@ export default function VendorPaymentSuccess() {
         </Link>
 
         <p className="vf-demo-note">
-          Demo mode: No real payment has been collected. Membership is activated
-          locally in this browser.
+          Paid via Razorpay. Your plan renews automatically — you can cancel
+          anytime from your profile.
         </p>
       </section>
     </main>
